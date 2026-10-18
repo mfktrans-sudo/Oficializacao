@@ -355,7 +355,7 @@ const HIST_LIMIT = 5000;   // registros do histórico carregados (a aba Históri
 const Store = {
   mode: 'local', online: true, pending: 0, user: LS.get('rom_user', ''),
   data: Object.fromEntries(COLS.map(c => [c, new Map()])),
-  subs: new Set(), unsubs: [], fb: null, ready: false, error: '', loaded: {},
+  subs: new Set(), unsubs: [], fb: null, ready: false, error: '', loaded: {}, synced: {}, giveUp: false, giveUpTimer: null,
   on(fn) { this.subs.add(fn); return () => this.subs.delete(fn); },
   emit(col) { this.subs.forEach(f => f(col)); },
   list(col) { return [...this.data[col].values()]; },
@@ -391,15 +391,23 @@ const Store = {
     for (const col of COLS) {
       let q = F.collection(db, col);
       if (col === 'historico') q = F.query(q, F.orderBy('ts', 'desc'), F.limit(HIST_LIMIT));
-      this.unsubs.push(F.onSnapshot(q, { includeMetadataChanges: false }, snap => {
-        snap.docChanges().forEach(ch => { if (ch.type === 'removed') this.data[col].delete(ch.doc.id); else this.data[col].set(ch.doc.id, { ...ch.doc.data({ serverTimestamps: 'estimate' }), id: ch.doc.id }); });
-        this.loaded[col] = true; this.ready = true; this.emit(col);
+      /* config: includeMetadataChanges=true para avisar quando o snapshot deixa de ser "do cache" e passa a ser do servidor */
+      this.unsubs.push(F.onSnapshot(q, { includeMetadataChanges: col === 'config' }, snap => {
+        const chg = snap.docChanges();
+        chg.forEach(ch => { if (ch.type === 'removed') this.data[col].delete(ch.doc.id); else this.data[col].set(ch.doc.id, { ...ch.doc.data({ serverTimestamps: 'estimate' }), id: ch.doc.id }); });
+        const first = !this.loaded[col], flipped = !snap.metadata.fromCache && !this.synced[col];
+        if (!snap.metadata.fromCache) this.synced[col] = true;
+        this.loaded[col] = true; this.ready = true;
+        if (col !== 'config' || first || chg.length || flipped) this.emit(col);
       }, err => { this.error = 'Leitura negada/erro: ' + err.code; this.emit('conn'); }));
     }
+    /* segurança: se o servidor não confirmar em 12 s, segue com o cache — mas SEM liberar acesso total */
+    clearTimeout(this.giveUpTimer);
+    this.giveUpTimer = setTimeout(() => { if (!this.synced.config) { this.giveUp = true; this.emit('config'); } }, 12000);
   },
   stopSync() {
     this.unsubs.forEach(u => { try { u(); } catch {} }); this.unsubs = [];
-    COLS.forEach(c => this.data[c].clear()); this.ready = false; this.loaded = {};
+    COLS.forEach(c => this.data[c].clear()); this.ready = false; this.loaded = {}; this.synced = {}; this.giveUp = false; clearTimeout(this.giveUpTimer);
   },
   initLocal() {
     this.mode = 'local';
@@ -511,10 +519,14 @@ const acList = () => Store.list('config').filter(c => String(c.id).startsWith('a
 function access() {
   if (Store.mode === 'local') return { ready: true, adm: true, open: true, tabs: ALL_TABS };
   if (!Store.loaded.config) return { ready: false, adm: false, open: false, tabs: [] };
-  const list = acList();
-  if (!list.some(a => a.role === 'adm')) return { ready: true, adm: true, open: true, tabs: ALL_TABS };
+  /* O 1º snapshot da config pode vir do cache / da própria escrita local (só o doc do usuário, sem nenhum administrador).
+     Decidir a permissão com isso liberava TODAS as abas até o servidor responder. Agora, online, espera a confirmação do servidor. */
+  if (Store.online && !Store.synced.config && !Store.giveUp) return { ready: false, adm: false, open: false, tabs: [] };
+  const list = acList(), confirmed = !!Store.synced.config;
+  /* "ninguém é administrador ainda → acesso total" só vale com a lista CONFIRMADA pelo servidor; sem confirmação (offline) fica restrito */
+  if (!list.some(a => a.role === 'adm') && confirmed) return { ready: true, adm: true, open: true, tabs: ALL_TABS };
   const me = list.find(a => a.id === 'acesso_' + myKey());
-  if (me && me.role === 'adm') return { ready: true, adm: true, open: false, tabs: ALL_TABS };
+  if (me && me.role === 'adm' && list.some(a => a.role === 'adm')) return { ready: true, adm: true, open: false, tabs: ALL_TABS };
   let t = me && Array.isArray(me.tabs) ? me.tabs.filter(k => ACC_TABS.some(x => x[0] === k)) : ACC_DEFAULT;
   if (!t.length) t = ['romaneio'];
   return { ready: true, adm: false, open: false, tabs: t };
@@ -545,7 +557,7 @@ function renderConn() {
 }
 function render() {
   const m = $('#main');
-  if (!access().ready) { m.innerHTML = '<div class="empty">Carregando…</div>'; return; }
+  if (!access().ready) { m.innerHTML = '<div class="empty">Carregando permissões…</div>'; return; }
   if (!canTab(tab)) { tab = firstTab(); LS.set('rom_tab', tab); renderNav(); }
   if (tab !== 'cadastro') CAD = null; if (tab !== 'indicadores') INDV = null; if (tab !== 'config') ACCV = null;
   ({ romaneio: viewRomaneio, cadastro: viewCadastro, historico: viewHist, indicadores: viewInd, config: viewConfig }[tab])(m);
