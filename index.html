@@ -664,7 +664,7 @@ function viewRomaneio(m) {
       </div>
       <div class="card"><h3>3 · Equipe</h3>
         <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">Conferente ${i + 1}</label><input class="in" data-c="${i}" list="dlConf" autocomplete="off" value="${esc(R.conf[i])}"></div>`).join('')}</div>
-        <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">Ajudante ${i + 1}</label><input class="in" data-a="${i}" list="dlAj" autocomplete="off" value="${esc(R.ajud[i])}"></div>`).join('')}</div>
+        <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">${i === 0 ? 'Ajudante 1: LACR:' : 'Ajudante ' + (i + 1)}</label><input class="in" data-a="${i}" list="dlAj" autocomplete="off" value="${esc(R.ajud[i])}"></div>`).join('')}</div>
         <datalist id="dlConf">${conf.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
         <datalist id="dlAj">${(aj.length ? aj : conf).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
       </div>
