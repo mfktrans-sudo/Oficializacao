@@ -379,7 +379,13 @@ const Store = {
     const [A, F, AU] = await Promise.all([import(FB_SDK + 'firebase-app.js'), import(FB_SDK + 'firebase-firestore.js'), import(FB_SDK + 'firebase-auth.js')]);
     const app = A.initializeApp(cfg);
     const auth = AU.getAuth(app);
-    const db = F.initializeFirestore(app, { localCache: F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) });
+    const lsOk = () => { try { const k='__probe__'; localStorage.setItem(k,'x'.repeat(2048)); localStorage.removeItem(k); return true; } catch { return false; } };
+    let ok = lsOk();
+    if (!ok) { try { Object.keys(localStorage).filter(k => k.startsWith('firestore_')).forEach(k => localStorage.removeItem(k)); } catch {} ok = lsOk(); }
+    let db;
+    try {
+      db = F.initializeFirestore(app, { localCache: ok ? F.persistentLocalCache({ tabManager: F.persistentMultipleTabManager() }) : F.memoryLocalCache() });
+    } catch (e) { console.warn('Cache persistente indisponível, usando memória', e); db = F.initializeFirestore(app, { localCache: F.memoryLocalCache() }); }
     this.fb = { F, db, AU, auth }; this.mode = 'firebase';
     window.addEventListener('online', () => { this.online = true; this.emit('conn'); });
     window.addEventListener('offline', () => { this.online = false; this.emit('conn'); });
