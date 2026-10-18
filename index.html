@@ -1242,7 +1242,8 @@ const AUTH_ERR = {
   'auth/operation-not-allowed': 'Login por e-mail/senha não está ativado no Firebase (Authentication › Sign-in method).',
   'auth/invalid-api-key': 'Configuração do Firebase inválida (apiKey).', 'auth/unauthorized-domain': 'Este endereço não está autorizado no Firebase (Authentication › Settings › Authorized domains).'
 };
-const authMsg = e => { const c = e && e.code; return c in AUTH_ERR ? AUTH_ERR[c] : (c ? 'Erro: ' + c : ((e && e.message) || 'Erro inesperado.')); };
+const isQuotaErr = e => !!e && (e.code === 22 || e.code === 1014 || e.name === 'QuotaExceededError' || /quota/i.test(String(e.message || '')));
+const authMsg = e => { if (isQuotaErr(e)) return 'Armazenamento do navegador cheio (erro 22). Limpe os dados deste site (cadeado › Configurações do site › Limpar dados) e tente de novo.'; const c = e && e.code; return c in AUTH_ERR ? AUTH_ERR[c] : (c ? 'Erro: ' + c : ((e && e.message) || 'Erro inesperado.')); };
 const toEmail = u => { u = String(u || '').trim().toLowerCase(); return u.includes('@') ? u : u.replace(/\s+/g, '') + '@' + LOGIN_DOMAIN; };
 const nameOf = u => String(u.displayName || String(u.email || '').split('@')[0] || 'USUARIO').toUpperCase();
 
@@ -1310,7 +1311,17 @@ const Auth = {
         await AU.setPersistence(auth, $('#gr').checked ? AU.browserLocalPersistence : AU.browserSessionPersistence).catch(() => {});
         await AU.signInWithEmailAndPassword(auth, toEmail(u), pw);
         LS.set('rom_lastuser', u);
-      } catch (x) { err(authMsg(x)); btn.disabled = false; btn.textContent = 'Entrar'; $('#gp').select(); }
+      } catch (x0) {
+        let x = x0;
+        /* erro 22 = QuotaExceededError: o navegador não consegue gravar a sessão. Tenta de novo só na aba (sessão) e, por fim, só em memória */
+        if (isQuotaErr(x)) {
+          for (const P of [AU.browserSessionPersistence, AU.inMemoryPersistence]) {
+            try { await AU.setPersistence(auth, P); await AU.signInWithEmailAndPassword(auth, toEmail(u), pw); LS.set('rom_lastuser', u); x = null; break; }
+            catch (y) { x = y; }
+          }
+        }
+        if (x) { err(authMsg(x)); btn.disabled = false; btn.textContent = 'Entrar'; $('#gp').select(); }
+      }
     };
   }
 };
