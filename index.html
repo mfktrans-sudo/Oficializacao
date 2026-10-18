@@ -157,6 +157,36 @@ main.gmode{display:flex;padding:24px 16px}
 /* a tabela precisa descontar a altura do banner */
 .tw{max-height:calc(100dvh - 300px - clamp(64px,10.5vw,200px))}
 .sheetw{max-height:calc(100dvh - 330px - clamp(64px,10.5vw,200px))}
+
+/* ===== indicadores ===== */
+.kpis{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;min-width:0}
+.kpi .kt{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--faint);font-weight:700}
+.kpi .kv2{font-size:26px;font-weight:800;margin:4px 0 2px;line-height:1.15;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kpi .ks{font-size:12px;color:var(--dim);min-height:15px}
+.hb{display:grid;gap:7px}
+.hbr{display:grid;grid-template-columns:minmax(70px,32%) 1fr 52px;gap:8px;align-items:center;font-size:12.5px}
+.hbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dim)}
+.hbt{height:16px;background:var(--surface2);border-radius:4px;overflow:hidden;display:flex}
+.hbf{display:block;height:100%}
+.hbv{text-align:right}
+.lg{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--dim);margin:0 0 10px}
+.lg i,.dnl i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px}
+.dn{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.dnl{display:grid;gap:6px;font-size:13px}
+.dnl small{color:var(--faint)}
+.cc{position:relative;padding-top:16px}
+.ccm{position:absolute;top:0;left:0;font-size:10.5px;color:var(--faint)}
+.ccb{display:flex;align-items:flex-end;height:180px;gap:3px;border-bottom:1px solid var(--border)}
+.ccc{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.ccv{font-size:10.5px;color:var(--dim);height:14px;line-height:14px;white-space:nowrap}
+.ccs{width:100%;display:flex;flex-direction:column-reverse;border-radius:3px 3px 0 0;overflow:hidden}
+.ccx{display:flex;gap:3px;margin-top:4px}
+.ccx span{flex:1;min-width:0;font-size:10px;color:var(--faint);text-align:center;white-space:nowrap}
+.indtb th,.indtb td{white-space:nowrap}
+.indtb td.n,.indtb th.n{text-align:right}
+.indtb tfoot td{font-weight:800;border-top:2px solid var(--border);background:var(--surface2)}
+.indtb tbody tr{cursor:default}
 </style>
 </head>
 <body>
@@ -185,7 +215,6 @@ main.gmode{display:flex;padding:24px 16px}
     <path d="M867.2 85Q861.2 85 856.1 83.1Q851 81.1 847.2 77.6Q843.4 74 841.3 69.2Q839.2 64.5 839.2 58.8Q839.2 53.1 841.3 48.4Q843.4 43.6 847.2 40Q851 36.5 856.1 34.5Q861.2 32.6 867.2 32.6Q873.4 32.6 878.4 34.5Q883.5 36.5 887.3 40Q891 43.6 893.1 48.4Q895.3 53.1 895.3 58.8Q895.3 64.5 893.1 69.3Q891 74.1 887.3 77.6Q883.5 81.1 878.4 83.1Q873.4 85 867.2 85ZM867.2 73.2Q870.1 73.2 872.6 72.2Q875.1 71.2 876.9 69.3Q878.8 67.4 879.8 64.7Q880.9 62 880.9 58.8Q880.9 55.5 879.8 52.9Q878.8 50.2 876.9 48.3Q875.1 46.4 872.6 45.4Q870.1 44.4 867.2 44.4Q864.4 44.4 861.9 45.4Q859.4 46.4 857.6 48.3Q855.7 50.2 854.7 52.9Q853.6 55.5 853.6 58.8Q853.6 62 854.7 64.7Q855.7 67.4 857.6 69.3Q859.4 71.2 861.9 72.2Q864.4 73.2 867.2 73.2ZM903 84V33.6H942.6V44.6H917.3V84ZM916.3 66.7V55.7H939.5V66.7ZM949.5 84V33.6H963.8V84ZM999.4 85Q993.4 85 988.3 83.1Q983.2 81.2 979.5 77.7Q975.8 74.1 973.7 69.3Q971.6 64.6 971.6 58.8Q971.6 53 973.7 48.3Q975.8 43.5 979.5 39.9Q983.2 36.4 988.3 34.5Q993.4 32.6 999.4 32.6Q1006.4 32.6 1011.9 35Q1017.4 37.5 1021 42.1L1012 50.3Q1009.5 47.4 1006.6 45.9Q1003.7 44.4 1000.1 44.4Q997 44.4 994.4 45.4Q991.8 46.4 990 48.3Q988.1 50.2 987.1 52.9Q986 55.6 986 58.8Q986 62 987.1 64.7Q988.1 67.4 990 69.3Q991.8 71.2 994.4 72.2Q997 73.2 1000.1 73.2Q1003.7 73.2 1006.6 71.7Q1009.5 70.2 1012 67.3L1021 75.5Q1017.4 80 1011.9 82.5Q1006.4 85 999.4 85ZM1027.1 84V33.6H1041.3V84ZM1045.7 84 1068 33.6H1082L1104.3 84H1089.5L1072.1 40.6H1077.7L1060.3 84ZM1057.9 74.2 1061.6 63.7H1086.2L1089.9 74.2ZM1108.7 84V33.6H1122.9V72.7H1147V84ZM1152.9 84V33.6H1167.1V84ZM1175 84V75.1L1204.7 39.9L1206.4 44.9H1175.7V33.6H1219.1V42.5L1189.4 77.7L1187.7 72.7H1220.2V84ZM1220.7 84 1242.9 33.6H1257L1279.3 84H1264.5L1247 40.6H1252.7L1235.2 84ZM1232.9 74.2 1236.5 63.7H1261.2L1264.8 74.2ZM1308 85Q1302.1 85 1297 83.1Q1291.9 81.2 1288.2 77.7Q1284.5 74.1 1282.4 69.3Q1280.3 64.6 1280.3 58.8Q1280.3 53 1282.4 48.3Q1284.5 43.5 1288.2 39.9Q1291.9 36.4 1297 34.5Q1302.1 32.6 1308 32.6Q1315 32.6 1320.5 35Q1326 37.5 1329.7 42.1L1320.6 50.3Q1318.2 47.4 1315.3 45.9Q1312.4 44.4 1308.8 44.4Q1305.7 44.4 1303.1 45.4Q1300.5 46.4 1298.6 48.3Q1296.8 50.2 1295.8 52.9Q1294.7 55.6 1294.7 58.8Q1294.7 62 1295.8 64.7Q1296.8 67.4 1298.6 69.3Q1300.5 71.2 1303.1 72.2Q1305.7 73.2 1308.8 73.2Q1312.4 73.2 1315.3 71.7Q1318.2 70.2 1320.6 67.3L1329.7 75.5Q1326 80 1320.5 82.5Q1315 85 1308 85ZM1305 101Q1303.2 101 1301.3 100.6Q1299.4 100.1 1298.2 99.5L1300 94.1Q1301 94.5 1302.1 94.8Q1303.2 95.1 1304.5 95.1Q1306.4 95.1 1307.3 94.5Q1308.1 93.9 1308.1 93.1Q1308.1 92.2 1307.3 91.7Q1306.6 91.3 1304.9 91.3H1302.2L1304.1 83.4H1311.2L1310.2 87.7Q1313.5 88 1314.9 89.8Q1316.4 91.5 1316.4 93.5Q1316.4 97 1313.3 99Q1310.2 101 1305 101ZM1328.8 84 1351.1 33.6H1365.1L1387.4 84H1372.6L1355.2 40.6H1360.8L1343.4 84ZM1341 74.2 1344.7 63.7H1369.3L1373 74.2ZM1363.9 30.1Q1362 30.1 1360.4 29.4Q1358.9 28.7 1357.6 27.8Q1356.4 26.9 1355.3 26.2Q1354.3 25.5 1353.2 25.5Q1351.8 25.5 1350.9 26.6Q1350 27.7 1349.9 29.4H1343Q1343.2 24.2 1345.6 21Q1348.1 17.8 1352.4 17.8Q1354.4 17.8 1355.9 18.4Q1357.4 19.1 1358.7 20Q1359.9 20.9 1361 21.6Q1362.1 22.3 1363.1 22.3Q1364.6 22.3 1365.5 21.3Q1366.4 20.2 1366.4 18.6H1373.2Q1373.1 23.7 1370.7 26.9Q1368.2 30.1 1363.9 30.1ZM1416.5 85Q1410.4 85 1405.3 83.1Q1400.2 81.1 1396.4 77.6Q1392.6 74 1390.5 69.2Q1388.5 64.5 1388.5 58.8Q1388.5 53.1 1390.5 48.4Q1392.6 43.6 1396.4 40Q1400.2 36.5 1405.3 34.5Q1410.4 32.6 1416.5 32.6Q1422.6 32.6 1427.7 34.5Q1432.7 36.5 1436.5 40Q1440.2 43.6 1442.3 48.4Q1444.5 53.1 1444.5 58.8Q1444.5 64.5 1442.3 69.3Q1440.2 74.1 1436.5 77.6Q1432.7 81.1 1427.7 83.1Q1422.6 85 1416.5 85ZM1416.5 73.2Q1419.3 73.2 1421.8 72.2Q1424.3 71.2 1426.1 69.3Q1428 67.4 1429 64.7Q1430.1 62 1430.1 58.8Q1430.1 55.5 1429 52.9Q1428 50.2 1426.1 48.3Q1424.3 46.4 1421.8 45.4Q1419.3 44.4 1416.5 44.4Q1413.6 44.4 1411.1 45.4Q1408.6 46.4 1406.8 48.3Q1404.9 50.2 1403.9 52.9Q1402.9 55.5 1402.9 58.8Q1402.9 62 1403.9 64.7Q1404.9 67.4 1406.8 69.3Q1408.6 71.2 1411.1 72.2Q1413.6 73.2 1416.5 73.2Z" fill="url(#bnT1)"/>
     <path d="M832.2 148 854.4 97.6H868.5L890.8 148H876L858.5 104.6H864.2L846.7 148ZM844.4 138.2 848 127.7H872.6L876.3 138.2ZM895.1 148V97.6H918.9Q927.3 97.6 933.6 100.7Q940 103.8 943.5 109.4Q947.1 115 947.1 122.8Q947.1 130.5 943.5 136.2Q940 141.8 933.6 144.9Q927.3 148 918.9 148ZM909.4 136.6H918.4Q922.7 136.6 925.9 135Q929.1 133.4 930.9 130.3Q932.7 127.1 932.7 122.8Q932.7 118.4 930.9 115.3Q929.1 112.2 925.9 110.6Q922.7 109 918.4 109H909.4ZM954.9 148V97.6H966.6L987.5 131.9H981.3L1001.6 97.6H1013.3L1013.5 148H1000.4L1000.2 117.5H1002.5L987.3 143H980.9L965.3 117.5H968V148ZM1045.1 148V97.6H1059.3V136.7H1083.4V148ZM1113.9 149Q1107.9 149 1102.8 147.1Q1097.6 145.1 1093.9 141.6Q1090.1 138 1088 133.2Q1085.9 128.5 1085.9 122.8Q1085.9 117.1 1088 112.4Q1090.1 107.6 1093.9 104Q1097.6 100.5 1102.8 98.5Q1107.9 96.6 1113.9 96.6Q1120 96.6 1125.1 98.5Q1130.2 100.5 1133.9 104Q1137.7 107.6 1139.8 112.4Q1141.9 117.1 1141.9 122.8Q1141.9 128.5 1139.8 133.3Q1137.7 138.1 1133.9 141.6Q1130.2 145.1 1125.1 147.1Q1120 149 1113.9 149ZM1113.9 137.2Q1116.8 137.2 1119.3 136.2Q1121.8 135.2 1123.6 133.3Q1125.4 131.4 1126.5 128.7Q1127.5 126 1127.5 122.8Q1127.5 119.5 1126.5 116.9Q1125.4 114.2 1123.6 112.3Q1121.8 110.4 1119.3 109.4Q1116.8 108.4 1113.9 108.4Q1111 108.4 1108.6 109.4Q1106.1 110.4 1104.2 112.3Q1102.4 114.2 1101.4 116.9Q1100.3 119.5 1100.3 122.8Q1100.3 126 1101.4 128.7Q1102.4 131.4 1104.2 133.3Q1106.1 135.2 1108.6 136.2Q1111 137.2 1113.9 137.2ZM1174.9 149Q1168.9 149 1163.8 147.1Q1158.7 145.2 1155 141.7Q1151.3 138.1 1149.2 133.3Q1147.1 128.6 1147.1 122.8Q1147.1 117 1149.2 112.3Q1151.3 107.5 1155 103.9Q1158.8 100.4 1163.9 98.5Q1169.1 96.6 1175.2 96.6Q1182.3 96.6 1187.9 99Q1193.6 101.3 1197.2 105.8L1188.2 114Q1185.6 111.2 1182.6 109.8Q1179.6 108.4 1175.9 108.4Q1172.7 108.4 1170 109.4Q1167.3 110.4 1165.5 112.3Q1163.6 114.2 1162.6 116.9Q1161.5 119.5 1161.5 122.8Q1161.5 126 1162.6 128.6Q1163.6 131.3 1165.5 133.2Q1167.3 135.1 1170 136.2Q1172.6 137.2 1175.8 137.2Q1178.9 137.2 1182 136.2Q1185 135.1 1188.1 132.6L1196.1 142.6Q1191.8 145.7 1186.1 147.4Q1180.4 149 1174.9 149ZM1196.1 142.6 1183.5 140.7V121.7H1196.1ZM1205.4 148V97.6H1219.7V148ZM1205.5 93.5 1215.2 82.6H1228.8L1215.3 93.5ZM1247.8 149Q1241.6 149 1235.9 147.5Q1230.2 145.9 1226.6 143.5L1231.3 133Q1234.7 135.1 1239.1 136.5Q1243.5 137.9 1247.9 137.9Q1250.9 137.9 1252.7 137.4Q1254.5 136.8 1255.3 135.9Q1256.1 135 1256.1 133.8Q1256.1 132.1 1254.5 131.1Q1253 130.1 1250.4 129.4Q1247.9 128.8 1244.9 128.1Q1241.8 127.5 1238.7 126.5Q1235.7 125.5 1233.2 123.8Q1230.6 122.2 1229 119.6Q1227.5 117 1227.5 112.9Q1227.5 108.4 1229.9 104.7Q1232.4 101.1 1237.4 98.8Q1242.4 96.6 1249.8 96.6Q1254.8 96.6 1259.5 97.7Q1264.3 98.8 1268.1 101L1263.7 111.6Q1260.1 109.6 1256.6 108.7Q1253 107.7 1249.7 107.7Q1246.8 107.7 1245 108.3Q1243.2 108.9 1242.4 109.9Q1241.6 110.9 1241.6 112.2Q1241.6 113.9 1243.1 114.8Q1244.7 115.8 1247.2 116.4Q1249.8 117 1252.8 117.7Q1255.9 118.3 1259 119.3Q1262 120.3 1264.5 121.9Q1267.1 123.5 1268.6 126.1Q1270.2 128.8 1270.2 132.7Q1270.2 137.1 1267.7 140.8Q1265.2 144.5 1260.3 146.8Q1255.3 149 1247.8 149ZM1287 148V108.9H1271.5V97.6H1316.7V108.9H1301.3V148ZM1322.3 148V97.6H1336.5V148ZM1372.1 149Q1366.1 149 1361.1 147.1Q1356 145.2 1352.3 141.7Q1348.6 138.1 1346.5 133.3Q1344.4 128.6 1344.4 122.8Q1344.4 117 1346.5 112.3Q1348.6 107.5 1352.3 103.9Q1356 100.4 1361.1 98.5Q1366.1 96.6 1372.1 96.6Q1379.1 96.6 1384.6 99Q1390.1 101.5 1393.8 106.1L1384.7 114.3Q1382.3 111.4 1379.3 109.9Q1376.4 108.4 1372.8 108.4Q1369.7 108.4 1367.1 109.4Q1364.6 110.4 1362.7 112.3Q1360.9 114.2 1359.8 116.9Q1358.8 119.6 1358.8 122.8Q1358.8 126 1359.8 128.7Q1360.9 131.4 1362.7 133.3Q1364.6 135.2 1367.1 136.2Q1369.7 137.2 1372.8 137.2Q1376.4 137.2 1379.3 135.7Q1382.3 134.2 1384.7 131.3L1393.8 139.5Q1390.1 144 1384.6 146.5Q1379.1 149 1372.1 149ZM1392.9 148 1415.2 97.6H1429.2L1451.5 148H1436.7L1419.3 104.6H1424.9L1407.5 148ZM1405.1 138.2 1408.8 127.7H1433.4L1437.1 138.2Z" fill="url(#bnT2)"/>
   </g>
-  <path d="M907.5 196.2Q905.7 196.2 904.1 195.6Q902.6 195 901.4 193.8Q900.3 192.7 899.6 191.2Q899 189.7 899 187.9Q899 186.2 899.6 184.7Q900.3 183.2 901.4 182.1Q902.6 180.9 904.1 180.3Q905.7 179.7 907.5 179.7Q909.4 179.7 911 180.3Q912.6 181 913.7 182.2L912.2 183.7Q911.2 182.7 910.1 182.2Q908.9 181.8 907.6 181.8Q906.3 181.8 905.1 182.2Q904 182.7 903.1 183.5Q902.2 184.3 901.8 185.5Q901.3 186.6 901.3 187.9Q901.3 189.3 901.8 190.4Q902.2 191.6 903.1 192.4Q904 193.2 905.1 193.7Q906.3 194.1 907.6 194.1Q908.9 194.1 910.1 193.7Q911.2 193.2 912.2 192.2L913.7 193.7Q912.6 194.9 911 195.5Q909.4 196.2 907.5 196.2ZM916.5 196V183.8H918.6V187.1L918.4 186.3Q918.9 185 920.1 184.4Q921.3 183.7 923.1 183.7V185.8Q922.9 185.8 922.8 185.8Q922.7 185.8 922.6 185.8Q920.8 185.8 919.8 186.9Q918.7 187.9 918.7 189.9V196ZM925.9 196V183.8H928.1V196ZM927 181.5Q926.4 181.5 926 181.1Q925.5 180.6 925.5 180Q925.5 179.4 926 179Q926.4 178.6 927 178.6Q927.7 178.6 928.1 179Q928.5 179.4 928.5 180Q928.5 180.6 928.1 181Q927.7 181.5 927 181.5ZM940.1 196V193.4L939.9 192.9V188.5Q939.9 187.1 939.1 186.4Q938.3 185.6 936.7 185.6Q935.6 185.6 934.6 186Q933.5 186.3 932.8 186.9L931.9 185.3Q932.8 184.5 934.2 184.1Q935.5 183.7 936.9 183.7Q939.4 183.7 940.8 184.9Q942.2 186.1 942.2 188.6V196ZM936.1 196.1Q934.7 196.1 933.7 195.7Q932.7 195.2 932.1 194.4Q931.6 193.6 931.6 192.6Q931.6 191.6 932 190.8Q932.5 190 933.6 189.5Q934.6 189 936.4 189H940.3V190.6H936.5Q934.9 190.6 934.3 191.1Q933.7 191.7 933.7 192.5Q933.7 193.4 934.4 193.9Q935.2 194.4 936.4 194.4Q937.7 194.4 938.6 193.9Q939.5 193.3 939.9 192.3L940.4 193.8Q939.9 194.9 938.8 195.5Q937.7 196.1 936.1 196.1ZM951.4 196.1Q949.7 196.1 948.3 195.4Q946.9 194.6 946.1 193.2Q945.3 191.8 945.3 189.9Q945.3 188 946.1 186.7Q946.9 185.3 948.3 184.5Q949.7 183.7 951.4 183.7Q953 183.7 954.2 184.4Q955.4 185.1 956.2 186.5Q956.9 187.8 956.9 189.9Q956.9 192 956.2 193.4Q955.5 194.7 954.3 195.4Q953 196.1 951.4 196.1ZM951.6 194.2Q952.8 194.2 953.7 193.7Q954.6 193.1 955.2 192.2Q955.7 191.2 955.7 189.9Q955.7 188.6 955.2 187.6Q954.6 186.7 953.7 186.2Q952.8 185.6 951.6 185.6Q950.4 185.6 949.5 186.2Q948.6 186.7 948 187.6Q947.5 188.6 947.5 189.9Q947.5 191.2 948 192.2Q948.6 193.1 949.5 193.7Q950.4 194.2 951.6 194.2ZM955.8 196V192.7L955.9 189.9L955.7 187.1V178.9H957.9V196ZM967.4 196.1Q965.6 196.1 964.2 195.3Q962.7 194.5 961.9 193.1Q961.1 191.7 961.1 189.9Q961.1 188.1 961.9 186.7Q962.7 185.3 964.2 184.5Q965.6 183.7 967.4 183.7Q969.2 183.7 970.7 184.5Q972.1 185.3 972.9 186.7Q973.8 188.1 973.8 189.9Q973.8 191.7 972.9 193.1Q972.1 194.5 970.7 195.3Q969.2 196.1 967.4 196.1ZM967.4 194.2Q968.6 194.2 969.5 193.7Q970.5 193.1 971 192.2Q971.5 191.2 971.5 189.9Q971.5 188.6 971 187.6Q970.5 186.7 969.5 186.2Q968.6 185.6 967.4 185.6Q966.3 185.6 965.3 186.2Q964.4 186.7 963.9 187.6Q963.3 188.6 963.3 189.9Q963.3 191.2 963.9 192.2Q964.4 193.1 965.3 193.7Q966.3 194.2 967.4 194.2ZM988.7 196.1Q986.8 196.1 985.3 195.3Q983.8 194.5 983 193.1Q982.2 191.7 982.2 189.9Q982.2 188.1 982.9 186.7Q983.7 185.3 985.1 184.5Q986.5 183.7 988.3 183.7Q990 183.7 991.4 184.5Q992.8 185.3 993.5 186.7Q994.3 188.1 994.3 190Q994.3 190.1 994.3 190.3Q994.3 190.5 994.2 190.6H983.9V189.1H993.1L992.2 189.6Q992.2 188.4 991.7 187.5Q991.2 186.6 990.3 186.1Q989.4 185.6 988.3 185.6Q987.1 185.6 986.2 186.1Q985.3 186.6 984.8 187.5Q984.3 188.5 984.3 189.7V190Q984.3 191.2 984.9 192.2Q985.4 193.1 986.5 193.7Q987.5 194.2 988.8 194.2Q989.9 194.2 990.7 193.8Q991.6 193.5 992.3 192.7L993.5 194.2Q992.7 195.1 991.5 195.6Q990.2 196.1 988.7 196.1ZM1008.9 196.1Q1007.1 196.1 1005.7 195.4Q1004.3 194.6 1003.5 193.2Q1002.7 191.8 1002.7 189.9Q1002.7 188 1003.5 186.7Q1004.3 185.3 1005.7 184.5Q1007.1 183.7 1008.9 183.7Q1010.4 183.7 1011.6 184.4Q1012.9 185.1 1013.6 186.5Q1014.4 187.8 1014.4 189.9Q1014.4 192 1013.6 193.4Q1012.9 194.7 1011.7 195.4Q1010.4 196.1 1008.9 196.1ZM1009 194.2Q1010.2 194.2 1011.1 193.7Q1012.1 193.1 1012.6 192.2Q1013.1 191.2 1013.1 189.9Q1013.1 188.6 1012.6 187.6Q1012.1 186.7 1011.1 186.2Q1010.2 185.6 1009 185.6Q1007.9 185.6 1006.9 186.2Q1006 186.7 1005.5 187.6Q1004.9 188.6 1004.9 189.9Q1004.9 191.2 1005.5 192.2Q1006 193.1 1006.9 193.7Q1007.9 194.2 1009 194.2ZM1013.2 196V192.7L1013.3 189.9L1013.1 187.1V178.9H1015.3V196ZM1025.1 196.1Q1023.1 196.1 1021.6 195.3Q1020.1 194.5 1019.3 193.1Q1018.5 191.7 1018.5 189.9Q1018.5 188.1 1019.3 186.7Q1020.1 185.3 1021.5 184.5Q1022.9 183.7 1024.6 183.7Q1026.4 183.7 1027.8 184.5Q1029.1 185.3 1029.9 186.7Q1030.7 188.1 1030.7 190Q1030.7 190.1 1030.6 190.3Q1030.6 190.5 1030.6 190.6H1020.2V189.1H1029.5L1028.6 189.6Q1028.6 188.4 1028.1 187.5Q1027.6 186.6 1026.7 186.1Q1025.8 185.6 1024.6 185.6Q1023.5 185.6 1022.6 186.1Q1021.7 186.6 1021.2 187.5Q1020.7 188.5 1020.7 189.7V190Q1020.7 191.2 1021.2 192.2Q1021.8 193.1 1022.8 193.7Q1023.8 194.2 1025.1 194.2Q1026.2 194.2 1027.1 193.8Q1028 193.5 1028.7 192.7L1029.9 194.2Q1029 195.1 1027.8 195.6Q1026.6 196.1 1025.1 196.1ZM1037.3 196.1Q1035.8 196.1 1034.5 195.7Q1033.1 195.3 1032.3 194.7L1033.2 193Q1034 193.5 1035.2 193.9Q1036.3 194.2 1037.5 194.2Q1039.1 194.2 1039.7 193.8Q1040.4 193.4 1040.4 192.6Q1040.4 192 1040 191.7Q1039.6 191.4 1038.9 191.2Q1038.2 191 1037.4 190.9Q1036.6 190.8 1035.7 190.6Q1034.9 190.4 1034.2 190Q1033.5 189.7 1033.1 189Q1032.7 188.4 1032.7 187.4Q1032.7 186.2 1033.3 185.4Q1033.9 184.6 1035.1 184.1Q1036.2 183.7 1037.8 183.7Q1039 183.7 1040.2 184Q1041.4 184.3 1042.2 184.8L1041.3 186.5Q1040.5 186 1039.6 185.8Q1038.7 185.6 1037.8 185.6Q1036.3 185.6 1035.6 186.1Q1034.9 186.5 1034.9 187.3Q1034.9 187.9 1035.3 188.2Q1035.7 188.5 1036.4 188.7Q1037.1 188.9 1037.9 189Q1038.8 189.2 1039.6 189.4Q1040.4 189.6 1041.1 189.9Q1041.8 190.2 1042.2 190.9Q1042.6 191.5 1042.6 192.5Q1042.6 193.6 1042 194.4Q1041.3 195.2 1040.2 195.7Q1039 196.1 1037.3 196.1ZM1050.9 196.1Q1049 196.1 1047.5 195.3Q1046 194.5 1045.2 193.1Q1044.4 191.7 1044.4 189.9Q1044.4 188.1 1045.2 186.7Q1046 185.3 1047.4 184.5Q1048.8 183.7 1050.5 183.7Q1052.3 183.7 1053.6 184.5Q1055 185.3 1055.8 186.7Q1056.5 188.1 1056.5 190Q1056.5 190.1 1056.5 190.3Q1056.5 190.5 1056.5 190.6H1046.1V189.1H1055.3L1054.4 189.6Q1054.5 188.4 1054 187.5Q1053.5 186.6 1052.6 186.1Q1051.7 185.6 1050.5 185.6Q1049.4 185.6 1048.5 186.1Q1047.6 186.6 1047.1 187.5Q1046.5 188.5 1046.5 189.7V190Q1046.5 191.2 1047.1 192.2Q1047.7 193.1 1048.7 193.7Q1049.7 194.2 1051 194.2Q1052.1 194.2 1053 193.8Q1053.9 193.5 1054.5 192.7L1055.8 194.2Q1054.9 195.1 1053.7 195.6Q1052.5 196.1 1050.9 196.1ZM1059.7 196V183.8H1061.8V187.1L1061.5 186.2Q1062.1 185 1063.3 184.4Q1064.6 183.7 1066.2 183.7Q1067.7 183.7 1068.9 184.3Q1070 184.8 1070.7 186Q1071.3 187.2 1071.3 189V196H1069.1V189.2Q1069.1 187.5 1068.2 186.6Q1067.4 185.7 1065.8 185.7Q1064.6 185.7 1063.8 186.1Q1062.9 186.6 1062.4 187.5Q1061.9 188.4 1061.9 189.7V196ZM1078.5 196 1073.2 183.8H1075.5L1080.2 194.8H1079.1L1083.9 183.8H1086.1L1080.8 196ZM1093.2 196.1Q1091.3 196.1 1089.9 195.3Q1088.5 194.5 1087.7 193.1Q1086.8 191.7 1086.8 189.9Q1086.8 188.1 1087.7 186.7Q1088.5 185.3 1089.9 184.5Q1091.3 183.7 1093.2 183.7Q1095 183.7 1096.4 184.5Q1097.9 185.3 1098.7 186.7Q1099.5 188.1 1099.5 189.9Q1099.5 191.7 1098.7 193.1Q1097.9 194.5 1096.4 195.3Q1095 196.1 1093.2 196.1ZM1093.2 194.2Q1094.3 194.2 1095.3 193.7Q1096.2 193.1 1096.7 192.2Q1097.3 191.2 1097.3 189.9Q1097.3 188.6 1096.7 187.6Q1096.2 186.7 1095.3 186.2Q1094.3 185.6 1093.2 185.6Q1092 185.6 1091.1 186.2Q1090.2 186.7 1089.6 187.6Q1089.1 188.6 1089.1 189.9Q1089.1 191.2 1089.6 192.2Q1090.2 193.1 1091.1 193.7Q1092 194.2 1093.2 194.2ZM1102.7 196V178.9H1104.9V196ZM1112.4 196 1107.1 183.8H1109.4L1114.1 194.8H1113L1117.9 183.8H1120L1114.7 196ZM1122.2 196V183.8H1124.5V196ZM1123.3 181.5Q1122.7 181.5 1122.3 181.1Q1121.9 180.6 1121.9 180Q1121.9 179.4 1122.3 179Q1122.7 178.6 1123.3 178.6Q1124 178.6 1124.4 179Q1124.8 179.4 1124.8 180Q1124.8 180.6 1124.4 181Q1124 181.5 1123.3 181.5ZM1133.8 196.1Q1132.1 196.1 1130.7 195.4Q1129.3 194.6 1128.5 193.2Q1127.7 191.8 1127.7 189.9Q1127.7 188 1128.5 186.7Q1129.3 185.3 1130.7 184.5Q1132.1 183.7 1133.8 183.7Q1135.4 183.7 1136.6 184.4Q1137.9 185.1 1138.6 186.5Q1139.4 187.8 1139.4 189.9Q1139.4 192 1138.6 193.4Q1137.9 194.7 1136.7 195.4Q1135.4 196.1 1133.8 196.1ZM1134 194.2Q1135.2 194.2 1136.1 193.7Q1137 193.1 1137.6 192.2Q1138.1 191.2 1138.1 189.9Q1138.1 188.6 1137.6 187.6Q1137 186.7 1136.1 186.2Q1135.2 185.6 1134 185.6Q1132.8 185.6 1131.9 186.2Q1131 186.7 1130.5 187.6Q1129.9 188.6 1129.9 189.9Q1129.9 191.2 1130.5 192.2Q1131 193.1 1131.9 193.7Q1132.8 194.2 1134 194.2ZM1138.2 196V192.7L1138.3 189.9L1138.1 187.1V178.9H1140.3V196ZM1149.8 196.1Q1148 196.1 1146.6 195.3Q1145.2 194.5 1144.3 193.1Q1143.5 191.7 1143.5 189.9Q1143.5 188.1 1144.3 186.7Q1145.2 185.3 1146.6 184.5Q1148 183.7 1149.8 183.7Q1151.7 183.7 1153.1 184.5Q1154.5 185.3 1155.4 186.7Q1156.2 188.1 1156.2 189.9Q1156.2 191.7 1155.4 193.1Q1154.5 194.5 1153.1 195.3Q1151.7 196.1 1149.8 196.1ZM1149.8 194.2Q1151 194.2 1151.9 193.7Q1152.9 193.1 1153.4 192.2Q1153.9 191.2 1153.9 189.9Q1153.9 188.6 1153.4 187.6Q1152.9 186.7 1151.9 186.2Q1151 185.6 1149.8 185.6Q1148.7 185.6 1147.8 186.2Q1146.8 186.7 1146.3 187.6Q1145.7 188.6 1145.7 189.9Q1145.7 191.2 1146.3 192.2Q1146.8 193.1 1147.8 193.7Q1148.7 194.2 1149.8 194.2ZM1172.2 196.1Q1170.6 196.1 1169.4 195.4Q1168.1 194.7 1167.4 193.4Q1166.6 192 1166.6 189.9Q1166.6 187.8 1167.4 186.5Q1168.1 185.1 1169.3 184.4Q1170.6 183.7 1172.2 183.7Q1173.9 183.7 1175.3 184.5Q1176.7 185.3 1177.5 186.7Q1178.3 188 1178.3 189.9Q1178.3 191.8 1177.5 193.2Q1176.7 194.6 1175.3 195.4Q1173.9 196.1 1172.2 196.1ZM1165.7 200.5V183.8H1167.8V187.1L1167.7 189.9L1167.9 192.8V200.5ZM1172 194.2Q1173.1 194.2 1174.1 193.7Q1175 193.1 1175.5 192.2Q1176.1 191.2 1176.1 189.9Q1176.1 188.6 1175.5 187.6Q1175 186.7 1174.1 186.2Q1173.1 185.6 1172 185.6Q1170.8 185.6 1169.9 186.2Q1169 186.7 1168.4 187.6Q1167.9 188.6 1167.9 189.9Q1167.9 191.2 1168.4 192.2Q1169 193.1 1169.9 193.7Q1170.8 194.2 1172 194.2ZM1186.7 196.1Q1184.9 196.1 1183.5 195.3Q1182 194.5 1181.2 193.1Q1180.4 191.7 1180.4 189.9Q1180.4 188.1 1181.2 186.7Q1182 185.3 1183.5 184.5Q1184.9 183.7 1186.7 183.7Q1188.6 183.7 1190 184.5Q1191.4 185.3 1192.2 186.7Q1193.1 188.1 1193.1 189.9Q1193.1 191.7 1192.2 193.1Q1191.4 194.5 1190 195.3Q1188.6 196.1 1186.7 196.1ZM1186.7 194.2Q1187.9 194.2 1188.8 193.7Q1189.8 193.1 1190.3 192.2Q1190.8 191.2 1190.8 189.9Q1190.8 188.6 1190.3 187.6Q1189.8 186.7 1188.8 186.2Q1187.9 185.6 1186.7 185.6Q1185.6 185.6 1184.6 186.2Q1183.7 186.7 1183.2 187.6Q1182.6 188.6 1182.6 189.9Q1182.6 191.2 1183.2 192.2Q1183.7 193.1 1184.6 193.7Q1185.6 194.2 1186.7 194.2ZM1196.3 196V183.8H1198.4V187.1L1198.2 186.3Q1198.7 185 1199.9 184.4Q1201.1 183.7 1202.8 183.7V185.8Q1202.7 185.8 1202.5 185.8Q1202.4 185.8 1202.3 185.8Q1200.5 185.8 1199.5 186.9Q1198.5 187.9 1198.5 189.9V196ZM1212.5 196V179.9H1218.8Q1221.9 179.9 1223.7 181.4Q1225.5 182.9 1225.5 185.5Q1225.5 187.3 1224.7 188.5Q1223.9 189.8 1222.4 190.4Q1220.9 191.1 1218.8 191.1H1213.7L1214.8 190V196ZM1223.2 196 1219.1 190.2H1221.6L1225.7 196ZM1214.8 190.3 1213.7 189.1H1218.7Q1220.9 189.1 1222 188.2Q1223.2 187.2 1223.2 185.5Q1223.2 183.8 1222 182.8Q1220.9 181.9 1218.7 181.9H1213.7L1214.8 180.8ZM1236.5 196V193.4L1236.3 192.9V188.5Q1236.3 187.1 1235.5 186.4Q1234.7 185.6 1233.1 185.6Q1232 185.6 1231 186Q1229.9 186.3 1229.2 186.9L1228.3 185.3Q1229.2 184.5 1230.6 184.1Q1231.9 183.7 1233.3 183.7Q1235.8 183.7 1237.2 184.9Q1238.6 186.1 1238.6 188.6V196ZM1232.5 196.1Q1231.1 196.1 1230.1 195.7Q1229.1 195.2 1228.5 194.4Q1228 193.6 1228 192.6Q1228 191.6 1228.4 190.8Q1228.9 190 1230 189.5Q1231 189 1232.8 189H1236.7V190.6H1232.9Q1231.3 190.6 1230.7 191.1Q1230.1 191.7 1230.1 192.5Q1230.1 193.4 1230.8 193.9Q1231.6 194.4 1232.8 194.4Q1234.1 194.4 1235 193.9Q1235.9 193.3 1236.3 192.3L1236.8 193.8Q1236.3 194.9 1235.2 195.5Q1234.1 196.1 1232.5 196.1ZM1243.1 196V182.7Q1243.1 180.9 1244.2 179.9Q1245.2 178.8 1247.1 178.8Q1247.8 178.8 1248.5 179Q1249.2 179.1 1249.6 179.5L1249 181.2Q1248.6 180.9 1248.2 180.8Q1247.7 180.6 1247.2 180.6Q1246.3 180.6 1245.8 181.2Q1245.3 181.7 1245.3 182.8V184.4L1245.3 185.4V196ZM1241 185.6V183.8H1248.8V185.6ZM1258.4 196V193.4L1258.3 192.9V188.5Q1258.3 187.1 1257.4 186.4Q1256.6 185.6 1255 185.6Q1253.9 185.6 1252.9 186Q1251.8 186.3 1251.1 186.9L1250.2 185.3Q1251.2 184.5 1252.5 184.1Q1253.8 183.7 1255.3 183.7Q1257.8 183.7 1259.1 184.9Q1260.5 186.1 1260.5 188.6V196ZM1254.4 196.1Q1253 196.1 1252 195.7Q1251 195.2 1250.4 194.4Q1249.9 193.6 1249.9 192.6Q1249.9 191.6 1250.3 190.8Q1250.8 190 1251.9 189.5Q1253 189 1254.8 189H1258.6V190.6H1254.9Q1253.2 190.6 1252.6 191.1Q1252.1 191.7 1252.1 192.5Q1252.1 193.4 1252.8 193.9Q1253.5 194.4 1254.7 194.4Q1256 194.4 1256.9 193.9Q1257.9 193.3 1258.3 192.3L1258.7 193.8Q1258.3 194.9 1257.2 195.5Q1256.1 196.1 1254.4 196.1ZM1270.1 196.1Q1268.2 196.1 1266.7 195.3Q1265.2 194.5 1264.4 193.1Q1263.6 191.7 1263.6 189.9Q1263.6 188.1 1264.4 186.7Q1265.2 185.3 1266.6 184.5Q1267.9 183.7 1269.7 183.7Q1271.5 183.7 1272.8 184.5Q1274.2 185.3 1275 186.7Q1275.7 188.1 1275.7 190Q1275.7 190.1 1275.7 190.3Q1275.7 190.5 1275.7 190.6H1265.3V189.1H1274.5L1273.6 189.6Q1273.7 188.4 1273.1 187.5Q1272.6 186.6 1271.8 186.1Q1270.9 185.6 1269.7 185.6Q1268.5 185.6 1267.6 186.1Q1266.8 186.6 1266.2 187.5Q1265.7 188.5 1265.7 189.7V190Q1265.7 191.2 1266.3 192.2Q1266.9 193.1 1267.9 193.7Q1268.9 194.2 1270.2 194.2Q1271.3 194.2 1272.2 193.8Q1273.1 193.5 1273.7 192.7L1274.9 194.2Q1274.1 195.1 1272.9 195.6Q1271.7 196.1 1270.1 196.1ZM1278.9 196V178.9H1281.1V196ZM1292.1 196V179.9H1294L1301.2 192.1H1300.2L1307.3 179.9H1309.2L1309.3 196H1307L1307 183.4H1307.6L1301.2 194H1300.1L1293.8 183.4H1294.3V196ZM1321.5 196V193.4L1321.4 192.9V188.5Q1321.4 187.1 1320.5 186.4Q1319.7 185.6 1318.1 185.6Q1317 185.6 1316 186Q1314.9 186.3 1314.2 186.9L1313.3 185.3Q1314.2 184.5 1315.6 184.1Q1316.9 183.7 1318.3 183.7Q1320.8 183.7 1322.2 184.9Q1323.6 186.1 1323.6 188.6V196ZM1317.5 196.1Q1316.1 196.1 1315.1 195.7Q1314.1 195.2 1313.5 194.4Q1313 193.6 1313 192.6Q1313 191.6 1313.4 190.8Q1313.9 190 1315 189.5Q1316 189 1317.9 189H1321.7V190.6H1318Q1316.3 190.6 1315.7 191.1Q1315.1 191.7 1315.1 192.5Q1315.1 193.4 1315.9 193.9Q1316.6 194.4 1317.8 194.4Q1319.1 194.4 1320 193.9Q1320.9 193.3 1321.4 192.3L1321.8 193.8Q1321.4 194.9 1320.3 195.5Q1319.1 196.1 1317.5 196.1ZM1327.8 196V183.8H1329.9V187.1L1329.7 186.3Q1330.2 185 1331.4 184.4Q1332.6 183.7 1334.3 183.7V185.8Q1334.2 185.8 1334.1 185.8Q1334 185.8 1333.8 185.8Q1332.1 185.8 1331 186.9Q1330 187.9 1330 189.9V196ZM1337.2 196V183.8H1339.4V196ZM1338.3 181.5Q1337.7 181.5 1337.2 181.1Q1336.8 180.6 1336.8 180Q1336.8 179.4 1337.2 179Q1337.7 178.6 1338.3 178.6Q1338.9 178.6 1339.4 179Q1339.8 179.4 1339.8 180Q1339.8 180.6 1339.4 181Q1339 181.5 1338.3 181.5ZM1351.3 196V193.4L1351.2 192.9V188.5Q1351.2 187.1 1350.4 186.4Q1349.6 185.6 1347.9 185.6Q1346.9 185.6 1345.8 186Q1344.8 186.3 1344.1 186.9L1343.2 185.3Q1344.1 184.5 1345.4 184.1Q1346.7 183.7 1348.2 183.7Q1350.7 183.7 1352.1 184.9Q1353.4 186.1 1353.4 188.6V196ZM1347.3 196.1Q1346 196.1 1344.9 195.7Q1343.9 195.2 1343.4 194.4Q1342.8 193.6 1342.8 192.6Q1342.8 191.6 1343.3 190.8Q1343.8 190 1344.8 189.5Q1345.9 189 1347.7 189H1351.6V190.6H1347.8Q1346.1 190.6 1345.6 191.1Q1345 191.7 1345 192.5Q1345 193.4 1345.7 193.9Q1346.4 194.4 1347.7 194.4Q1348.9 194.4 1349.9 193.9Q1350.8 193.3 1351.2 192.3L1351.6 193.8Q1351.2 194.9 1350.1 195.5Q1349 196.1 1347.3 196.1ZM1357.6 196V183.8H1359.8V187.1L1359.4 186.2Q1360 185 1361.3 184.4Q1362.5 183.7 1364.2 183.7Q1365.7 183.7 1366.8 184.3Q1367.9 184.8 1368.6 186Q1369.2 187.2 1369.2 189V196H1367V189.2Q1367 187.5 1366.1 186.6Q1365.3 185.7 1363.7 185.7Q1362.5 185.7 1361.7 186.1Q1360.8 186.6 1360.3 187.5Q1359.9 188.4 1359.9 189.7V196ZM1378.7 196.1Q1376.8 196.1 1375.4 195.3Q1374 194.5 1373.2 193.1Q1372.3 191.7 1372.3 189.9Q1372.3 188.1 1373.2 186.7Q1374 185.3 1375.4 184.5Q1376.8 183.7 1378.7 183.7Q1380.5 183.7 1381.9 184.5Q1383.4 185.3 1384.2 186.7Q1385 188.1 1385 189.9Q1385 191.7 1384.2 193.1Q1383.4 194.5 1381.9 195.3Q1380.5 196.1 1378.7 196.1ZM1378.7 194.2Q1379.8 194.2 1380.8 193.7Q1381.7 193.1 1382.2 192.2Q1382.8 191.2 1382.8 189.9Q1382.8 188.6 1382.2 187.6Q1381.7 186.7 1380.8 186.2Q1379.8 185.6 1378.7 185.6Q1377.5 185.6 1376.6 186.2Q1375.7 186.7 1375.1 187.6Q1374.6 188.6 1374.6 189.9Q1374.6 191.2 1375.1 192.2Q1375.7 193.1 1376.6 193.7Q1377.5 194.2 1378.7 194.2Z" fill="#e8f1ff" opacity=".95"/>
 
 
   <!-- ===== TELA DO NOTEBOOK: indicadores em movimento ===== -->
@@ -322,10 +351,11 @@ const DEFAULT_LAYOUT = {
    - gravação por CAMPO (merge) → mesma ficha, campos diferentes = sem conflito
    ===================================================================== */
 const COLS = ['motoristas', 'transportadoras', 'pessoal', 'historico', 'config'];
+const HIST_LIMIT = 5000;   // registros do histórico carregados (a aba Histórico continua mostrando os 150 mais recentes; os Indicadores usam todos)
 const Store = {
   mode: 'local', online: true, pending: 0, user: LS.get('rom_user', ''),
   data: Object.fromEntries(COLS.map(c => [c, new Map()])),
-  subs: new Set(), unsubs: [], fb: null, ready: false, error: '',
+  subs: new Set(), unsubs: [], fb: null, ready: false, error: '', loaded: {},
   on(fn) { this.subs.add(fn); return () => this.subs.delete(fn); },
   emit(col) { this.subs.forEach(f => f(col)); },
   list(col) { return [...this.data[col].values()]; },
@@ -360,16 +390,16 @@ const Store = {
     const { F, db } = this.fb;
     for (const col of COLS) {
       let q = F.collection(db, col);
-      if (col === 'historico') q = F.query(q, F.orderBy('ts', 'desc'), F.limit(150));
+      if (col === 'historico') q = F.query(q, F.orderBy('ts', 'desc'), F.limit(HIST_LIMIT));
       this.unsubs.push(F.onSnapshot(q, { includeMetadataChanges: false }, snap => {
         snap.docChanges().forEach(ch => { if (ch.type === 'removed') this.data[col].delete(ch.doc.id); else this.data[col].set(ch.doc.id, { ...ch.doc.data({ serverTimestamps: 'estimate' }), id: ch.doc.id }); });
-        this.ready = true; this.emit(col);
+        this.loaded[col] = true; this.ready = true; this.emit(col);
       }, err => { this.error = 'Leitura negada/erro: ' + err.code; this.emit('conn'); }));
     }
   },
   stopSync() {
     this.unsubs.forEach(u => { try { u(); } catch {} }); this.unsubs = [];
-    COLS.forEach(c => this.data[c].clear()); this.ready = false;
+    COLS.forEach(c => this.data[c].clear()); this.ready = false; this.loaded = {};
   },
   initLocal() {
     this.mode = 'local';
@@ -460,14 +490,46 @@ function screenText(R, drv) {
 /* =====================================================================
    INTERFACE
    ===================================================================== */
-const TABS = [['romaneio', 'Romaneio'], ['cadastro', 'Cadastro'], ['historico', 'Histórico'], ['config', 'Configurações']];
-let tab = LS.get('rom_tab', 'romaneio'); if (!['romaneio', 'cadastro', 'historico', 'config'].includes(tab)) tab = 'romaneio';
+const TABS = [['romaneio', 'Romaneio'], ['cadastro', 'Cadastro'], ['historico', 'Histórico'], ['indicadores', 'Indicadores'], ['config', 'Configurações']];
+let tab = LS.get('rom_tab', 'romaneio'); if (!['romaneio', 'cadastro', 'historico', 'indicadores', 'config'].includes(tab)) tab = 'romaneio';
 let R = LS.get('rom_draft_' + (Store.user || ''), null) || { cpf: '', placa: '', conf: ['', '', ''], ajud: ['', '', ''] };
 const saveDraft = () => LS.set('rom_draft_' + (Store.user || ''), R);   // rascunho é POR USUÁRIO/NAVEGADOR
 let mq = '', mf = '', mpage = 0;
 
+let INDV = null, ACCV = null;
+
+/* ---------- ACESSO: perfis (Administrador / Restrito) e abas liberadas ----------
+   Guardado em config/acesso_<login>. Enquanto NÃO existir nenhum administrador, todos têm acesso total
+   (assim ninguém fica trancado para fora). Depois do primeiro administrador, quem não estiver
+   listado como administrador vê só as abas liberadas (padrão: Romaneio e Cadastro). */
+const ACC_TABS = [['romaneio', 'Romaneio'], ['cadastro', 'Cadastro'], ['historico', 'Histórico'], ['indicadores', 'Indicadores']];
+const ACC_DEFAULT = ['romaneio', 'cadastro'];
+const ALL_TABS = ['romaneio', 'cadastro', 'historico', 'indicadores', 'config'];
+const acKey = s => String(s || '').trim().toLowerCase().replace(/@romaneio\.app$/, '').replace(/[^a-z0-9@._-]+/g, '_');
+const myKey = () => acKey(Auth.user ? Auth.user.email : Store.user);
+const acList = () => Store.list('config').filter(c => String(c.id).startsWith('acesso_'));
+function access() {
+  if (Store.mode === 'local') return { ready: true, adm: true, open: true, tabs: ALL_TABS };
+  if (!Store.loaded.config) return { ready: false, adm: false, open: false, tabs: [] };
+  const list = acList();
+  if (!list.some(a => a.role === 'adm')) return { ready: true, adm: true, open: true, tabs: ALL_TABS };
+  const me = list.find(a => a.id === 'acesso_' + myKey());
+  if (me && me.role === 'adm') return { ready: true, adm: true, open: false, tabs: ALL_TABS };
+  let t = me && Array.isArray(me.tabs) ? me.tabs.filter(k => ACC_TABS.some(x => x[0] === k)) : ACC_DEFAULT;
+  if (!t.length) t = ['romaneio'];
+  return { ready: true, adm: false, open: false, tabs: t };
+}
+const visibleTabs = () => { const a = access(); return TABS.filter(([k]) => a.tabs.includes(k)); };
+const canTab = k => access().tabs.includes(k);
+const isAdm = () => access().adm;
+const firstTab = () => (visibleTabs()[0] || ['romaneio'])[0];
+function registerAcesso() {
+  const k = myKey(); if (!k || Store.mode !== 'firebase') return;
+  Store.set('config', 'acesso_' + k, { login: k, nome: Store.user || '', ultimoAcesso: Date.now() });
+}
+
 function renderNav() {
-  $('#nav').innerHTML = TABS.map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('');
+  $('#nav').innerHTML = visibleTabs().map(([k, n]) => `<button data-t="${k}" class="${k === tab ? 'on' : ''}">${n}</button>`).join('');
   $('#nav').querySelectorAll('button').forEach(b => b.onclick = () => { tab = b.dataset.t; LS.set('rom_tab', tab); renderNav(); render(); });
 }
 function renderConn() {
@@ -481,7 +543,13 @@ function renderConn() {
   c.className = 'chip ' + cls; t.textContent = txt;
   $('#opchip').textContent = '👤 ' + (Store.user || 'definir operador');
 }
-function render() { const m = $('#main'); if (tab !== 'cadastro') CAD = null; ({ romaneio: viewRomaneio, cadastro: viewCadastro, historico: viewHist, config: viewConfig }[tab])(m); }
+function render() {
+  const m = $('#main');
+  if (!access().ready) { m.innerHTML = '<div class="empty">Carregando…</div>'; return; }
+  if (!canTab(tab)) { tab = firstTab(); LS.set('rom_tab', tab); renderNav(); }
+  if (tab !== 'cadastro') CAD = null; if (tab !== 'indicadores') INDV = null; if (tab !== 'config') ACCV = null;
+  ({ romaneio: viewRomaneio, cadastro: viewCadastro, historico: viewHist, indicadores: viewInd, config: viewConfig }[tab])(m);
+}
 
 /* ---------- ROMANEIO ---------- */
 function searchDrivers(q) {
@@ -552,7 +620,7 @@ function viewRomaneio(m) {
   $('#placa').oninput = e => { R.placa = e.target.value.toUpperCase(); e.target.value = R.placa; saveDraft(); refresh(); };
   m.querySelectorAll('[data-c]').forEach(s => s.onchange = () => { R.conf[+s.dataset.c] = s.value; saveDraft(); refresh(); });
   m.querySelectorAll('[data-a]').forEach(s => s.onchange = () => { R.ajud[+s.dataset.a] = s.value; saveDraft(); refresh(); });
-  const ed = $('#edDrv'); if (ed) ed.onclick = () => { mq = R.cpf; mf = ''; mpage = 0; tab = 'cadastro'; LS.set('rom_tab', tab); renderNav(); render(); };
+  const ed = $('#edDrv'); if (ed) ed.onclick = () => { if (!canTab('cadastro')) return toast('Você não tem acesso à aba Cadastro'); mq = R.cpf; mf = ''; mpage = 0; tab = 'cadastro'; LS.set('rom_tab', tab); renderNav(); render(); };
   const up = $('#usePl'); if (up) up.onclick = e => { e.preventDefault(); R.placa = drv.placa; saveDraft(); render(); };
   $('#savePlaca').onclick = () => { if (drv && R.placa) { Store.set('motoristas', drv.cpf, { placa: R.placa }); toast('Placa gravada no cadastro'); } };
   $('#clear').onclick = () => { R = { cpf: '', placa: '', conf: ['', '', ''], ajud: ['', '', ''] }; saveDraft(); render(); };
@@ -687,9 +755,260 @@ function viewCadastro(m) {
 /* ---------- HISTÓRICO ---------- */
 function viewHist(m) {
   const rows = Store.list('historico').sort((a, b) => tms(b.ts) - tms(a.ts)).slice(0, 150);
-  m.innerHTML = `<h2>Histórico de romaneios copiados</h2><p class="sub">Últimos 150 registros de todos os usuários.</p><div class="tw"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Motorista</th><th>Transportadora</th><th>Placa</th><th>Equipe</th></tr></thead><tbody>${rows.map(r => `<tr style="cursor:default"><td>${new Date(tms(r.ts)).toLocaleString('pt-BR')}</td><td>${esc(r.usuario)}</td><td>${esc(r.nome)}<br><small class="mono">${fmtCpf(r.cpf)}</small></td><td>${esc(r.transpNome || r.transp)}</td><td class="mono">${esc(r.placa)}</td><td>${esc([...(r.conf || []), ...(r.ajud || [])].join(', '))}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">Sem registros.</td></tr>'}</tbody></table></div>`;
+  const adm = isAdm();
+  m.innerHTML = `<h2>Histórico de romaneios copiados</h2><p class="sub">Últimos 150 registros de todos os usuários.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}</p><div class="tw"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Motorista</th><th>Transportadora</th><th>Placa</th><th>Equipe</th>${adm ? '<th></th>' : ''}</tr></thead><tbody>${rows.map(r => `<tr data-id="${esc(r.id)}" style="cursor:default"><td>${new Date(tms(r.ts)).toLocaleString('pt-BR')}${r.updatedBy ? `<br><small class="warn" title="Editado por ${esc(r.updatedBy)}">✎ editado</small>` : ''}</td><td>${esc(r.usuario)}</td><td>${esc(r.nome)}<br><small class="mono">${fmtCpf(r.cpf)}</small></td><td>${esc(r.transpNome || r.transp)}</td><td class="mono">${esc(r.placa)}</td><td>${esc([...(r.conf || []), ...(r.ajud || [])].join(', '))}</td>${adm ? '<td style="white-space:nowrap"><button class="btn sm" data-ed title="Editar">✎</button> <button class="btn sm danger" data-rm title="Excluir">✕</button></td>' : ''}</tr>`).join('') || `<tr><td colspan="${adm ? 7 : 6}" class="empty">Sem registros.</td></tr>`}</tbody></table></div>`;
+  if (adm) m.querySelectorAll('tbody tr[data-id]').forEach(tr => {
+    const id = tr.dataset.id;
+    tr.querySelector('[data-ed]').onclick = () => editHist(id);
+    tr.querySelector('[data-rm]').onclick = async () => {
+      const r = Store.get('historico', id); if (!r) return;
+      if (confirm(`Excluir este registro do histórico?\n${r.nome || ''} · ${r.placa || ''}\nA exclusão vale para TODOS os usuários e altera os indicadores.`)) { await Store.del('historico', id); toast('Registro excluído'); }
+    };
+  });
 }
-const tms = t => t && t.toMillis ? t.toMillis() : (typeof t === 'number' ? t : 0);
+const tms = t => t && t.toMillis ? t.toMillis() : (t instanceof Date ? t.getTime() : (typeof t === 'number' ? t : 0));
+
+/* painel de edição de um registro do histórico */
+function editHist(id) {
+  const r = Store.get('historico', id); if (!r) return;
+  const pad = n => String(n).padStart(2, '0');
+  const d = new Date(tms(r.ts) || Date.now());
+  const dtv = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const conf = equipe('conferente'), aj = equipe('ajudante');
+  const opts = (arr, v) => `<option value=""></option>` + arr.map(n => `<option ${n === v ? 'selected' : ''}>${esc(n)}</option>`).join('') + (v && !arr.includes(v) ? `<option selected>${esc(v)}</option>` : '');
+  const bg = document.createElement('div'); bg.className = 'drawer-bg';
+  bg.innerHTML = `<div class="drawer"><h2>Editar registro <button class="btn sm" id="hxX" type="button">✕</button></h2>
+    <p class="sub">A alteração vale para todos os usuários e entra nos indicadores.</p>
+    <div class="row"><div><label class="f">Data e hora</label><input class="in" id="hxTs" type="datetime-local" value="${dtv}"></div></div>
+    <div class="row r2"><div><label class="f">Usuário (quem gerou)</label><input class="in" id="hxUser" value="${esc(r.usuario)}"></div><div><label class="f">Placa</label><input class="in mono" id="hxPlaca" maxlength="8" value="${esc(r.placa)}"></div></div>
+    <div class="row"><div><label class="f">Motorista</label><input class="in" id="hxNome" value="${esc(r.nome)}"></div></div>
+    <div class="row r2"><div><label class="f">CPF</label><input class="in mono" id="hxCpf" maxlength="14" value="${fmtCpf(r.cpf)}"></div><div><label class="f">Código da transportadora</label><input class="in mono" id="hxTransp" list="hxDl" value="${esc(r.transp)}"></div></div>
+    <datalist id="hxDl">${Store.list('transportadoras').sort(byName).map(t => `<option value="${esc(t.id)}">${esc(t.nome)}</option>`).join('')}</datalist>
+    <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">Conferente ${i + 1}</label><select class="in" data-hc="${i}">${opts(conf, (r.conf || [])[i])}</select></div>`).join('')}</div>
+    <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">Ajudante ${i + 1}</label><select class="in" data-ha="${i}">${opts(aj.length ? aj : conf, (r.ajud || [])[i])}</select></div>`).join('')}</div>
+    <div style="display:flex;gap:10px;margin-top:14px"><button class="btn pri big" id="hxSave" type="button">Salvar alterações</button><button class="btn big" id="hxCancel" type="button">Cancelar</button></div></div>`;
+  document.body.appendChild(bg);
+  const close = () => bg.remove();
+  bg.onclick = e => { if (e.target === bg) close(); };
+  bg.querySelector('#hxX').onclick = bg.querySelector('#hxCancel').onclick = close;
+  bg.querySelector('#hxSave').onclick = async () => {
+    const g = k => bg.querySelector(k).value;
+    const ms = new Date(g('#hxTs')).getTime(); if (!ms) return toast('Informe data e hora válidas');
+    const nome = g('#hxNome').trim().toUpperCase(); if (!nome) return toast('Informe o nome do motorista');
+    const dg = digits(g('#hxCpf')); if (dg.length < 8 || dg.length > 11) return toast('Informe um CPF válido (11 dígitos)');
+    const code = idOf(g('#hxTransp'));
+    const patch = {
+      ts: Store.mode === 'local' ? ms : new Date(ms), usuario: (g('#hxUser').trim() || r.usuario || 'anon').toUpperCase(), nome, cpf: dg.padStart(11, '0'),
+      transp: code, transpNome: transpName(code) || (code === r.transp ? (r.transpNome || '') : ''), placa: g('#hxPlaca').trim().toUpperCase(),
+      conf: [...bg.querySelectorAll('[data-hc]')].map(x => x.value).filter(Boolean), ajud: [...bg.querySelectorAll('[data-ha]')].map(x => x.value).filter(Boolean)
+    };
+    close(); await Store.set('historico', id, patch); toast('Registro atualizado ✓');
+  };
+}
+
+/* ---------- INDICADORES (produtividade por usuário e turno) ----------
+   Fonte: histórico de romaneios copiados. Cada registro é classificado no turno pelo horário em que foi gerado.
+   Turnos que viram a meia-noite pertencem ao dia em que começaram ("dia operacional"). */
+const DEFAULT_TURNOS = [{ nome: 'Manhã', ini: '06:00', fim: '14:00' }, { nome: 'Tarde', ini: '14:00', fim: '22:00' }, { nome: 'Noite', ini: '22:00', fim: '06:00' }];
+const turnos = () => {
+  const c = Store.get('config', 'turnos');
+  const l = c && Array.isArray(c.lista) && c.lista.length ? c.lista : DEFAULT_TURNOS;
+  return l.map((t, i) => ({ nome: (t && t.nome) || ('Turno ' + (i + 1)), ini: (t && t.ini) || '00:00', fim: (t && t.fim) || '00:00' }));
+};
+const hm = x => { const [h, m] = String(x).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+const FORA = 'Fora de turno', FORA_COR = '#667386';
+const TCOL = ['#4aa3ff', '#f5b53d', '#a78bfa', '#3fb97a', '#ef5b5b'];
+const UCOL = ['#4aa3ff', '#f5b53d', '#3fb97a', '#ef5b5b', '#a78bfa', '#22d3ee', '#f472b6', '#fb923c'];
+const PAUSA_MIN = 60;   // intervalos maiores que isso são pausa e não entram no "intervalo médio"
+const turnoCor = nome => { const i = turnos().findIndex(t => t.nome === nome); return i >= 0 ? TCOL[i % TCOL.length] : FORA_COR; };
+function turnoOf(d) {
+  const min = d.getHours() * 60 + d.getMinutes();
+  for (const t of turnos()) {
+    const a = hm(t.ini), b = hm(t.fim), cruza = a >= b;
+    if (cruza ? (min >= a || min < b) : (min >= a && min < b)) return { nome: t.nome, dia: new Date(d.getFullYear(), d.getMonth(), d.getDate() - (cruza && min < b ? 1 : 0)) };
+  }
+  return { nome: FORA, dia: new Date(d.getFullYear(), d.getMonth(), d.getDate()) };
+}
+const dkey = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const addDays = (d, n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const fdia = d => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+const nf = (n, d = 0) => (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const hh = h => h == null ? '—' : String(h).padStart(2, '0') + 'h';
+const WDN = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+let IND = Object.assign({ per: '7d', turno: '', user: '', de: '', ate: '' }, LS.get('rom_ind', {}));
+
+function indWindow() {
+  const hoje = turnoOf(new Date()).dia; let a, b;
+  if (IND.per === 'hoje') a = b = hoje;
+  else if (IND.per === 'ontem') a = b = addDays(hoje, -1);
+  else if (IND.per === '30d') { a = addDays(hoje, -29); b = hoje; }
+  else if (IND.per === 'mes') { a = new Date(hoje.getFullYear(), hoje.getMonth(), 1); b = hoje; }
+  else if (IND.per === 'custom') { a = IND.de ? new Date(IND.de + 'T00:00') : addDays(hoje, -6); b = IND.ate ? new Date(IND.ate + 'T00:00') : hoje; if (a > b) [a, b] = [b, a]; }
+  else { a = addDays(hoje, -6); b = hoje; }
+  return { a, b, n: Math.round((b - a) / 864e5) + 1 };
+}
+function indRecs() {
+  return Store.list('historico').map(r => {
+    const ms = tms(r.ts); if (!ms) return null;
+    const d = new Date(ms), t = turnoOf(d);
+    return { ms, h: d.getHours(), wd: t.dia.getDay(), dia: t.dia, dk: dkey(t.dia), turno: t.nome, user: String(r.usuario || '—').toUpperCase(), cpf: r.cpf || '', placa: r.placa || '', transp: r.transpNome || r.transp || '—', conf: r.conf || [], ajud: r.ajud || [] };
+  }).filter(Boolean);
+}
+function calc(L) {
+  const inc = (m, k, v = 1) => m.set(k, (m.get(k) || 0) + v);
+  const o = { total: L.length, user: new Map(), turno: new Map(), ut: new Map(), day: new Map(), dayT: new Map(), dayU: new Map(), hour: Array(24).fill(0), wd: Array(7).fill(0), transp: new Map(), equipe: new Map(), cpfs: new Set(), placas: new Set(), buckets: new Set(), comPlaca: 0, comConf: 0, pessoas: 0 };
+  for (const x of L) {
+    inc(o.user, x.user); inc(o.turno, x.turno); inc(o.ut, x.user + '\u0001' + x.turno); inc(o.day, x.dk); inc(o.dayT, x.dk + '\u0001' + x.turno); inc(o.dayU, x.dk + '\u0001' + x.user);
+    o.hour[x.h]++; o.wd[x.wd]++; inc(o.transp, x.transp);
+    [...x.conf, ...x.ajud].forEach(n => inc(o.equipe, String(n).toUpperCase()));
+    if (x.cpf) o.cpfs.add(x.cpf); if (x.placa) { o.placas.add(x.placa); o.comPlaca++; }
+    o.buckets.add(x.dk + '|' + x.h); if (x.conf.length) o.comConf++; o.pessoas += x.conf.length + x.ajud.length;
+  }
+  o.dias = o.day.size; return o;
+}
+function perUser(L) {
+  const g = new Map(); L.forEach(x => { if (!g.has(x.user)) g.set(x.user, []); g.get(x.user).push(x); });
+  return [...g.entries()].map(([user, a]) => {
+    a.sort((p, q) => p.ms - q.ms);
+    const days = new Set(a.map(x => x.dk)), bk = new Set(a.map(x => x.dk + '|' + x.h)), tn = new Map(), hr = Array(24).fill(0), drv = new Set();
+    let gs = 0, gn = 0, pl = 0, cf = 0;
+    a.forEach((x, i) => {
+      tn.set(x.turno, (tn.get(x.turno) || 0) + 1); hr[x.h]++; if (x.cpf) drv.add(x.cpf); if (x.placa) pl++; if (x.conf.length) cf++;
+      if (i) { const p = a[i - 1]; if (p.dk === x.dk && p.turno === x.turno) { const gm = (x.ms - p.ms) / 6e4; if (gm <= PAUSA_MIN) { gs += gm; gn++; } } }
+    });
+    const top = [...tn.entries()].sort((p, q) => q[1] - p[1])[0];
+    return { user, n: a.length, dias: days.size, perDia: a.length / days.size, perHora: a.length / bk.size, gs, gn, gap: gn ? gs / gn : null, turno: top ? top[0] : '—', pico: hr.indexOf(Math.max(...hr)), drv: drv.size, pPlaca: pl / a.length, pConf: cf / a.length };
+  }).sort((p, q) => q.n - p.n);
+}
+function perTurno(L) {
+  const names = turnos().map(t => t.nome); if (L.some(x => x.turno === FORA)) names.push(FORA);
+  return [...new Set(names)].map(nm => {
+    const a = L.filter(x => x.turno === nm), t = turnos().find(t => t.nome === nm);
+    const days = new Set(a.map(x => x.dk)), bk = new Set(a.map(x => x.dk + '|' + x.h)), us = new Map(), hr = Array(24).fill(0);
+    a.forEach(x => { us.set(x.user, (us.get(x.user) || 0) + 1); hr[x.h]++; });
+    const top = [...us.entries()].sort((p, q) => q[1] - p[1])[0];
+    return { nome: nm, hor: t ? `${t.ini}–${t.fim}` : '—', n: a.length, users: us.size, perDia: days.size ? a.length / days.size : 0, perHora: bk.size ? a.length / bk.size : 0, pico: a.length ? hr.indexOf(Math.max(...hr)) : null, top: top ? top[0] : '—' };
+  });
+}
+
+/* ----- componentes de gráfico (HTML/SVG puro, sem bibliotecas externas) ----- */
+const EMPTYC = '<div class="empty" style="padding:24px">Sem dados no período.</div>';
+const hbar = items => { const mx = Math.max(1, ...items.map(i => i.v)); return items.length ? `<div class="hb">${items.map(i => `<div class="hbr"><span class="hbl" title="${esc(i.l)}">${esc(i.l)}</span><span class="hbt"><span class="hbf" style="width:${(i.v / mx * 100).toFixed(1)}%;background:${i.c || 'var(--accent)'}"></span></span><b class="hbv">${nf(i.v)}</b></div>`).join('')}</div>` : EMPTYC; };
+const hstack = rows => { const mx = Math.max(1, ...rows.map(r => r.tot)); return rows.length ? `<div class="hb">${rows.map(r => `<div class="hbr"><span class="hbl" title="${esc(r.l)}">${esc(r.l)}</span><span class="hbt">${r.segs.filter(s => s.v).map(s => `<span class="hbf" title="${esc(s.t)}: ${s.v}" style="width:${(s.v / mx * 100).toFixed(2)}%;background:${s.c}"></span>`).join('')}</span><b class="hbv">${nf(r.tot)}</b></div>`).join('')}</div>` : EMPTYC; };
+const legend = names => `<div class="lg">${names.map(n => `<span><i style="background:${turnoCor(n)}"></i>${esc(n)}</span>`).join('')}</div>`;
+const cols = items => {
+  const mx = Math.max(1, ...items.map(i => i.tot)), step = Math.ceil(items.length / 16), few = items.length <= 16;
+  return `<div class="cc"><div class="ccm">${nf(mx)}</div><div class="ccb">${items.map(i => `<div class="ccc" title="${esc(i.l)}: ${nf(i.tot)}"><span class="ccv">${few && i.tot ? nf(i.tot) : ''}</span><div class="ccs" style="height:calc((100% - 14px) * ${(i.tot / mx).toFixed(4)})">${i.segs.filter(s => s.v).map(s => `<div style="flex:${s.v};background:${s.c}"></div>`).join('')}</div></div>`).join('')}</div><div class="ccx">${items.map((i, k) => `<span>${k % step === 0 ? esc(i.l) : ''}</span>`).join('')}</div></div>`;
+};
+const donut = items => {
+  const tot = items.reduce((a, i) => a + i.v, 0); if (!tot) return EMPTYC;
+  const R = 52, C = 2 * Math.PI * R; let off = 0;
+  const arcs = items.filter(i => i.v).map(i => { const len = i.v / tot * C; const t = `<circle r="${R}" cx="70" cy="70" fill="none" stroke="${i.c}" stroke-width="22" stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 70 70)"><title>${esc(i.l)}: ${i.v}</title></circle>`; off += len; return t; }).join('');
+  return `<div class="dn"><svg viewBox="0 0 140 140" width="150" height="150">${arcs}<text x="70" y="68" text-anchor="middle" fill="var(--text)" font-size="20" font-weight="800">${nf(tot)}</text><text x="70" y="84" text-anchor="middle" fill="var(--faint)" font-size="9">romaneios</text></svg><div class="dnl">${items.map(i => `<div><i style="background:${i.c}"></i>${esc(i.l)} <b>${nf(i.v)}</b> <small>${nf(i.v / tot * 100, 1)}%</small></div>`).join('')}</div></div>`;
+};
+const lines = (days, series) => {
+  const W = 640, H = 220, pl = 34, pr = 22, pt = 10, pb = 22, mx = Math.max(1, ...series.flatMap(s => s.v));
+  const x = i => pl + (days.length > 1 ? i * (W - pl - pr) / (days.length - 1) : (W - pl - pr) / 2), y = v => pt + (H - pt - pb) * (1 - v / mx);
+  const grid = [0, .5, 1].map(f => { const yy = pt + (H - pt - pb) * (1 - f); return `<line x1="${pl}" x2="${W - pr}" y1="${yy}" y2="${yy}" stroke="var(--border)"/><text x="${pl - 4}" y="${yy + 3}" text-anchor="end" fill="var(--faint)" font-size="9">${nf(Math.round(mx * f))}</text>`; }).join('');
+  const step = Math.ceil(days.length / 10);
+  const xl = days.map((d, i) => i % step === 0 ? `<text x="${x(i)}" y="${H - 6}" text-anchor="middle" fill="var(--faint)" font-size="9">${d.l}</text>` : '').join('');
+  const ls = series.map(s => `<polyline fill="none" stroke="${s.c}" stroke-width="2" points="${s.v.map((v, i) => x(i) + ',' + y(v)).join(' ')}"/>` + s.v.map((v, i) => `<circle cx="${x(i)}" cy="${y(v)}" r="2.6" fill="${s.c}"><title>${esc(s.l)} · ${days[i].l}: ${v}</title></circle>`).join('')).join('');
+  return `<div class="lg">${series.map(s => `<span><i style="background:${s.c}"></i>${esc(s.l)}</span>`).join('')}</div><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">${grid}${xl}${ls}</svg>`;
+};
+const kpi = (t, v, s, c) => `<div class="kpi"><div class="kt">${t}</div><div class="kv2"${c ? ` style="color:${c}"` : ''} title="${esc(String(v).replace(/<[^>]*>/g, ''))}">${v}</div><div class="ks">${s || ''}</div></div>`;
+
+function viewInd(m) {
+  m.innerHTML = `<h2>Indicadores de produtividade</h2><p class="sub">Romaneios copiados por usuário e por turno. Os turnos (e seus horários) são ajustados em Configurações.</p>
+  <div class="tools" style="align-items:flex-end">
+    <div><label class="f">Período</label><select class="in" id="iP" style="min-width:150px;flex:none"><option value="hoje">Hoje</option><option value="ontem">Ontem</option><option value="7d">Últimos 7 dias</option><option value="30d">Últimos 30 dias</option><option value="mes">Mês atual</option><option value="custom">Personalizado</option></select></div>
+    <div id="iC" style="display:flex;gap:8px;align-items:flex-end"><div><label class="f">De</label><input class="in" type="date" id="iDe" style="min-width:140px;flex:none"></div><div><label class="f">Até</label><input class="in" type="date" id="iAte" style="min-width:140px;flex:none"></div></div>
+    <div><label class="f">Turno</label><select class="in" id="iT" style="min-width:150px;flex:none"></select></div>
+    <div><label class="f">Usuário</label><select class="in" id="iU" style="min-width:170px;flex:none"></select></div>
+    <button class="btn" id="iX" type="button">⬇ Exportar tabela (CSV)</button>
+  </div>
+  <div id="indB"></div>`;
+  $('#iP').value = IND.per; $('#iDe').value = IND.de; $('#iAte').value = IND.ate; $('#iC').hidden = IND.per !== 'custom';
+  let lastRows = null;
+  const draw = () => {
+    const { a, b, n } = indWindow(), ak = dkey(a), bk = dkey(b), pa = dkey(addDays(a, -n)), pb = dkey(addDays(b, -n));
+    const all = indRecs();
+    const allUsers = [...new Set(all.map(x => x.user))].sort();
+    const ucor = u => UCOL[allUsers.indexOf(u) % UCOL.length];
+    const tAll = turnos().map(t => t.nome);
+    const selT = $('#iT'), selU = $('#iU');
+    if (selT.dataset.sig !== tAll.join('|')) { selT.dataset.sig = tAll.join('|'); selT.innerHTML = '<option value="">Todos os turnos</option>' + tAll.map(t => `<option>${esc(t)}</option>`).join('') + `<option>${FORA}</option>`; }
+    if (selU.dataset.sig !== allUsers.join('|')) { selU.dataset.sig = allUsers.join('|'); selU.innerHTML = '<option value="">Todos os usuários</option>' + allUsers.map(u => `<option>${esc(u)}</option>`).join(''); }
+    selT.value = IND.turno; selU.value = IND.user;
+    const f = x => (!IND.turno || x.turno === IND.turno) && (!IND.user || x.user === IND.user);
+    const L = all.filter(x => x.dk >= ak && x.dk <= bk && f(x)), P = all.filter(x => x.dk >= pa && x.dk <= pb && f(x));
+    const warnLim = Store.mode === 'firebase' && Store.list('historico').length >= HIST_LIMIT ? `<div class="gwarn">O histórico carregado atingiu ${nf(HIST_LIMIT)} registros: períodos mais antigos podem estar incompletos.</div>` : '';
+    const head = `<p class="sub" style="margin-top:-6px">Período: <b>${fdia(a)}${n > 1 ? ' a ' + fdia(b) : ''}</b> (${n} dia${n > 1 ? 's' : ''} operacional${n > 1 ? 'is' : ''}) · ${nf(L.length)} romaneio${L.length === 1 ? '' : 's'}</p>${warnLim}`;
+    if (!L.length) { $('#indB').innerHTML = head + '<div class="card"><div class="empty">Nenhum romaneio registrado neste período / filtro.</div></div>'; lastRows = null; return; }
+    const o = calc(L), pu = perUser(L), pt = perTurno(L).filter(t => !IND.turno || t.nome === IND.turno);
+    const tnames = turnos().map(t => t.nome); if (L.some(x => x.turno === FORA)) tnames.push(FORA);
+    const days = []; for (let d = a, i = 0; d <= b && i < 400; d = addDays(d, 1), i++) days.push({ k: dkey(d), l: fdia(d) });
+    const gs = pu.reduce((t, u) => t + u.gs, 0), gn = pu.reduce((t, u) => t + u.gn, 0), gapG = gn ? gs / gn : null;
+    const picoH = o.hour.indexOf(Math.max(...o.hour));
+    const lider = [...pt].sort((p, q) => q.n - p.n)[0];
+    const dl = P.length ? (L.length - P.length) / P.length * 100 : null;
+    const dtxt = dl == null ? 'sem período anterior p/ comparar' : `<span style="color:${dl >= 0 ? 'var(--ok)' : 'var(--err)'}">${dl >= 0 ? '▲' : '▼'} ${nf(Math.abs(dl), 1)}%</span> vs. período anterior (${nf(P.length)})`;
+    const kpis = [
+      kpi('Total de romaneios', nf(o.total), dtxt, 'var(--accent)'),
+      kpi('Média por dia ativo', nf(o.total / o.dias, 1), `${o.dias} dia${o.dias > 1 ? 's' : ''} com movimento`),
+      kpi('Romaneios por hora ativa', nf(o.total / o.buckets.size, 1), `${o.buckets.size} hora${o.buckets.size > 1 ? 's' : ''} com movimento`),
+      kpi('Intervalo médio', gapG == null ? '—' : nf(gapG, 1) + ' min', `entre romaneios do mesmo usuário (até ${PAUSA_MIN} min)`),
+      kpi('Usuários ativos', nf(pu.length), `de ${allUsers.length} no histórico`),
+      kpi('Melhor usuário', esc(pu[0].user), `${nf(pu[0].n)} romaneios · ${nf(pu[0].n / o.total * 100, 1)}%`, 'var(--ok)'),
+      kpi('Turno líder', lider ? esc(lider.nome) : '—', lider ? `${nf(lider.n)} romaneios · ${nf(lider.n / o.total * 100, 1)}%` : ''),
+      kpi('Hora de pico', hh(picoH), `${nf(o.hour[picoH])} romaneios nessa hora`),
+      kpi('Motoristas únicos', nf(o.cpfs.size), `${nf(o.placas.size)} placas diferentes`),
+      kpi('Equipe média por romaneio', nf(o.pessoas / o.total, 1), 'conferentes + ajudantes'),
+      kpi('Com placa informada', nf(o.comPlaca / o.total * 100, 1) + '%', `${nf(o.total - o.comPlaca)} sem placa`, o.comPlaca / o.total < .9 ? 'var(--accent)' : ''),
+      kpi('Com conferente', nf(o.comConf / o.total * 100, 1) + '%', `${nf(o.total - o.comConf)} sem conferente`, o.comConf / o.total < .9 ? 'var(--accent)' : '')
+    ].join('');
+    const cUser = hbar(pu.map(u => ({ l: u.user, v: u.n, c: ucor(u.user) })));
+    const cUT = legend(tnames) + hstack(pu.map(u => ({ l: u.user, tot: u.n, segs: tnames.map(t => ({ t, v: o.ut.get(u.user + '\u0001' + t) || 0, c: turnoCor(t) })) })));
+    const cDonut = donut(tnames.map(t => ({ l: t, v: o.turno.get(t) || 0, c: turnoCor(t) })).filter(i => i.v));
+    const cDayT = legend(tnames) + cols(days.map(d => ({ l: d.l, tot: o.day.get(d.k) || 0, segs: tnames.map(t => ({ v: o.dayT.get(d.k + '\u0001' + t) || 0, c: turnoCor(t) })) })));
+    const top6 = pu.slice(0, 6);
+    const cDayU = days.length > 1 ? lines(days, top6.map(u => ({ l: u.user, c: ucor(u.user), v: days.map(d => o.dayU.get(d.k + '\u0001' + u.user) || 0) }))) + (pu.length > 6 ? '<p class="sub" style="font-size:12px;margin:6px 0 0">Mostrando os 6 usuários com mais romaneios.</p>' : '') : '<div class="empty" style="padding:24px">Escolha um período com mais de 1 dia.</div>';
+    const cHour = legend(tnames) + cols(o.hour.map((v, h) => ({ l: hh(h), tot: v, segs: [{ v, c: turnoCor(turnoOf(new Date(2000, 0, 1, h, 30)).nome) }] })));
+    const cWd = cols(o.wd.map((v, i) => ({ l: WDN[i], tot: v, segs: [{ v, c: 'var(--accent)' }] })));
+    const cTr = hbar([...o.transp.entries()].sort((p, q) => q[1] - p[1]).slice(0, 10).map(([l, v]) => ({ l, v, c: 'var(--info)' })));
+    const cEq = hbar([...o.equipe.entries()].sort((p, q) => q[1] - p[1]).slice(0, 10).map(([l, v]) => ({ l, v, c: 'var(--ok)' })));
+    const rowsU = pu.map(u => `<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${ucor(u.user)};margin-right:7px"></span><b>${esc(u.user)}</b></td><td class="n">${nf(u.n)}</td><td class="n">${nf(u.n / o.total * 100, 1)}%</td><td class="n">${u.dias}</td><td class="n">${nf(u.perDia, 1)}</td><td class="n">${nf(u.perHora, 1)}</td><td class="n">${u.gap == null ? '—' : nf(u.gap, 1) + ' min'}</td><td>${esc(u.turno)}</td><td class="n">${hh(u.pico)}</td><td class="n">${u.drv}</td><td class="n">${nf(u.pPlaca * 100, 0)}%</td><td class="n">${nf(u.pConf * 100, 0)}%</td></tr>`).join('');
+    const totRow = `<tr><td>TOTAL</td><td class="n">${nf(o.total)}</td><td class="n">100%</td><td class="n">${o.dias}</td><td class="n">${nf(o.total / o.dias, 1)}</td><td class="n">${nf(o.total / o.buckets.size, 1)}</td><td class="n">${gapG == null ? '—' : nf(gapG, 1) + ' min'}</td><td>${lider ? esc(lider.nome) : '—'}</td><td class="n">${hh(picoH)}</td><td class="n">${o.cpfs.size}</td><td class="n">${nf(o.comPlaca / o.total * 100, 0)}%</td><td class="n">${nf(o.comConf / o.total * 100, 0)}%</td></tr>`;
+    const rowsT = pt.map(t => `<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${turnoCor(t.nome)};margin-right:7px"></span><b>${esc(t.nome)}</b></td><td>${esc(t.hor)}</td><td class="n">${nf(t.n)}</td><td class="n">${nf(t.n / o.total * 100, 1)}%</td><td class="n">${t.users}</td><td class="n">${nf(t.perDia, 1)}</td><td class="n">${nf(t.perHora, 1)}</td><td class="n">${hh(t.pico)}</td><td>${esc(t.top)}</td></tr>`).join('');
+    lastRows = [['Usuario', 'Romaneios', '% do total', 'Dias ativos', 'Media por dia', 'Media por hora ativa', 'Intervalo medio (min)', 'Turno principal', 'Hora de pico', 'Motoristas unicos', '% com placa', '% com conferente'],
+      ...pu.map(u => [u.user, u.n, nf(u.n / o.total * 100, 1), u.dias, nf(u.perDia, 1), nf(u.perHora, 1), u.gap == null ? '' : nf(u.gap, 1), u.turno, hh(u.pico), u.drv, nf(u.pPlaca * 100, 0), nf(u.pConf * 100, 0)])];
+    $('#indB').innerHTML = head + `<div class="kpis">${kpis}</div>
+    <div class="grid g2">
+      <div class="card"><h3>Romaneios por usuário</h3>${cUser}</div>
+      <div class="card"><h3>Usuário × turno</h3>${cUT}</div>
+      <div class="card"><h3>Distribuição por turno</h3>${cDonut}</div>
+      <div class="card"><h3>Evolução diária por turno</h3>${cDayT}</div>
+      <div class="card"><h3>Evolução diária por usuário</h3>${cDayU}</div>
+      <div class="card"><h3>Produção por hora do dia</h3>${cHour}</div>
+      <div class="card"><h3>Por dia da semana</h3>${cWd}</div>
+      <div class="card"><h3>Top transportadoras</h3>${cTr}</div>
+      <div class="card"><h3>Equipe mais presente (conferentes e ajudantes)</h3>${cEq}</div>
+    </div>
+    <div class="card" style="margin-top:16px"><h3>Produtividade por usuário</h3><div class="tw" style="max-height:none"><table class="indtb"><thead><tr><th>Usuário</th><th class="n">Romaneios</th><th class="n">% do total</th><th class="n">Dias ativos</th><th class="n">Média/dia</th><th class="n">Média/hora ativa</th><th class="n">Intervalo médio</th><th>Turno principal</th><th class="n">Hora de pico</th><th class="n">Motoristas únicos</th><th class="n">% com placa</th><th class="n">% com conferente</th></tr></thead><tbody>${rowsU}</tbody><tfoot>${totRow}</tfoot></table></div></div>
+    <div class="card" style="margin-top:16px"><h3>Resumo por turno</h3><div class="tw" style="max-height:none"><table class="indtb"><thead><tr><th>Turno</th><th>Horário</th><th class="n">Romaneios</th><th class="n">% do total</th><th class="n">Usuários</th><th class="n">Média/dia</th><th class="n">Média/hora ativa</th><th class="n">Hora de pico</th><th>Quem mais produziu</th></tr></thead><tbody>${rowsT}</tbody></table></div></div>`;
+  };
+  const save = () => LS.set('rom_ind', IND);
+  $('#iP').onchange = e => { IND.per = e.target.value; $('#iC').hidden = IND.per !== 'custom'; save(); draw(); };
+  $('#iDe').onchange = e => { IND.de = e.target.value; save(); draw(); };
+  $('#iAte').onchange = e => { IND.ate = e.target.value; save(); draw(); };
+  $('#iT').onchange = e => { IND.turno = e.target.value; save(); draw(); };
+  $('#iU').onchange = e => { IND.user = e.target.value; save(); draw(); };
+  $('#iX').onclick = () => {
+    if (!lastRows) return toast('Nada para exportar neste período');
+    const csv = lastRows.map(r => r.map(x => String(x ?? '').replace(/;/g, ',')).join(';')).join('\r\n');
+    const el = document.createElement('a'); el.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); el.download = 'indicadores_usuarios.csv'; el.click();
+  };
+  INDV = draw; draw();
+}
 
 /* ---------- CONFIGURAÇÕES ---------- */
 function viewConfig(m) {
@@ -712,7 +1031,10 @@ function viewConfig(m) {
       <button class="btn" id="imCsv">Importar CSV</button><input type="file" id="imF" accept=".csv,.txt" hidden></div>
     <p class="sub" style="font-size:12px;margin-top:10px">CSV com colunas: CPF;NOME;RG;CODIGO;PLACA;ATALHO (separador ; ou ,). CPFs existentes são atualizados, os demais criados.</p>
     <div class="kv" style="margin-top:8px"><b>Motoristas</b><span>${Store.data.motoristas.size}</span><b>Transportadoras</b><span>${Store.data.transportadoras.size}</span><b>Equipe</b><span>${Store.data.pessoal.size}</span></div></div>
-  </div></div>`;
+  </div></div>
+  <div class="card" id="accCard" style="margin-top:16px"></div>
+  <div class="card" id="turCard" style="margin-top:16px"></div>`;
+  wireAcesso(); wireTurnos();
   const saveLayout = debounce(async () => { await Store.set('config', 'layout', { placaLen: +$('#cLen').value || 160, linhasCurto: +$('#cCur').value || 12, confirma: $('#cConf').value, linhasTxt: $('#cSeq').value }); $('#lsv').textContent = 'Layout salvo ✓'; }, 700);
   ['#cLen', '#cCur', '#cConf', '#cSeq'].forEach(s => $(s).oninput = () => { $('#lsv').textContent = 'Salvando…'; saveLayout(); });
   $('#cReset').onclick = async () => { if (confirm('Voltar ao layout padrão para todos?')) { await Store.del('config', 'layout'); render(); } };
@@ -736,6 +1058,75 @@ function viewConfig(m) {
   };
 }
 
+/* ---------- CONFIGURAÇÕES: acesso de usuários ---------- */
+function wireAcesso() {
+  const card = $('#accCard'); if (!card) return;
+  const nAdm = () => acList().filter(a => a.role === 'adm').length;
+  const draw = () => {
+    const keep = ($('#acN') || {}).value || '';
+    const list = acList().sort((a, b) => String(a.login || a.id).localeCompare(String(b.login || b.id)));
+    const ac = access(), me = myKey();
+    card.innerHTML = `<h3>Acesso de usuários</h3>
+      <p class="sub" style="font-size:12.5px">Usuários <b>Restritos</b> veem somente as abas marcadas (padrão: Romaneio e Cadastro). <b>Administradores</b> têm acesso a tudo, inclusive Configurações, e podem editar/excluir no Histórico. Quem entrar pela primeira vez aparece aqui como Restrito.</p>
+      ${ac.open ? '<div class="gwarn">Nenhum administrador definido: por enquanto <b>todos</b> os usuários têm acesso total. Marque pelo menos um como Administrador para ativar as restrições.</div>' : ''}
+      <div class="addbar"><input class="in" id="acN" placeholder="Login do usuário (o que ele digita para entrar, ex.: maria)"><button class="btn pri sm" id="acAdd" type="button">+ Adicionar</button></div>
+      <div class="tw" style="max-height:440px"><table><thead><tr><th>Usuário</th><th>Perfil</th><th>Abas liberadas</th><th>Último acesso</th><th></th></tr></thead><tbody>${list.map(a => {
+        const k = String(a.id).slice(7), adm = a.role === 'adm', tabs = adm ? ACC_TABS.map(x => x[0]) : (Array.isArray(a.tabs) ? a.tabs : ACC_DEFAULT);
+        return `<tr data-k="${esc(k)}" style="cursor:default"><td><b>${esc(a.login || k)}</b>${k === me ? ' <small class="warn">(você)</small>' : ''}<br><small style="color:var(--faint)">${esc(a.nome || '')}</small></td>
+          <td><select class="in" data-role style="min-width:150px"><option value="restrito" ${adm ? '' : 'selected'}>Restrito</option><option value="adm" ${adm ? 'selected' : ''}>Administrador</option></select></td>
+          <td>${ACC_TABS.map(([t, n]) => `<label class="gcheck" style="display:inline-flex;margin:0 14px 0 0"><input type="checkbox" data-tab="${t}" ${tabs.includes(t) ? 'checked' : ''} ${adm ? 'disabled' : ''}> ${n}</label>`).join('')}</td>
+          <td><small>${a.ultimoAcesso ? new Date(a.ultimoAcesso).toLocaleString('pt-BR') : '—'}</small></td>
+          <td><button class="btn sm danger" data-rm type="button" title="Remover da lista">✕</button></td></tr>`;
+      }).join('') || '<tr><td colspan="5" class="empty">Nenhum usuário listado ainda.</td></tr>'}</tbody></table></div>`;
+    if (keep) $('#acN').value = keep;
+  };
+  const add = async () => {
+    const k = acKey($('#acN').value); if (!k) return toast('Informe o login do usuário');
+    if (Store.get('config', 'acesso_' + k)) return toast('Esse usuário já está na lista');
+    await Store.set('config', 'acesso_' + k, { login: k, nome: '', role: 'restrito', tabs: ACC_DEFAULT });
+    $('#acN').value = ''; toast('Usuário adicionado ✓');
+  };
+  card.onchange = async e => {
+    const tr = e.target.closest('tr[data-k]'); if (!tr) return;
+    const id = 'acesso_' + tr.dataset.k, cur = Store.get('config', id) || {};
+    if (e.target.matches('[data-role]')) {
+      const role = e.target.value;
+      if (role !== 'adm' && cur.role === 'adm' && nAdm() <= 1) { toast('Mantenha pelo menos um administrador.'); draw(); return; }
+      await Store.set('config', id, { role, tabs: Array.isArray(cur.tabs) ? cur.tabs : ACC_DEFAULT });
+    } else if (e.target.matches('[data-tab]')) {
+      await Store.set('config', id, { tabs: [...tr.querySelectorAll('[data-tab]')].filter(x => x.checked).map(x => x.dataset.tab) });
+    }
+  };
+  card.onclick = async e => {
+    if (e.target.id === 'acAdd') return add();
+    const b = e.target.closest('[data-rm]'); if (!b) return;
+    const k = b.closest('tr').dataset.k, id = 'acesso_' + k, cur = Store.get('config', id) || {};
+    if (cur.role === 'adm' && nAdm() <= 1) return toast('Mantenha pelo menos um administrador.');
+    if (confirm(`Remover "${k}" da lista? Se ele entrar de novo, volta como Restrito.`)) { await Store.del('config', id); toast('Usuário removido da lista'); }
+  };
+  card.onkeydown = e => { if (e.key === 'Enter' && e.target.id === 'acN') add(); };
+  ACCV = draw; draw();
+}
+
+/* ---------- CONFIGURAÇÕES: turnos (usados nos Indicadores) ---------- */
+function wireTurnos() {
+  const card = $('#turCard'); if (!card) return;
+  const cur = turnos(), custom = !!Store.get('config', 'turnos');
+  card.innerHTML = `<h3>Turnos (usados nos Indicadores)</h3>
+    <p class="sub" style="font-size:12.5px">Cada romaneio copiado é classificado no turno pelo horário em que foi registrado. Turnos que viram a meia-noite (ex.: 22:00 → 06:00) pertencem ao dia em que começaram. Horário fora de qualquer turno aparece como “${FORA}”.</p>
+    <div class="grid" style="gap:8px">${cur.map((t, i) => `<div class="row" style="grid-template-columns:1.4fr 1fr 1fr;margin:0"><div><label class="f">Turno ${i + 1}</label><input class="in" data-tn="${i}" data-f="nome" value="${esc(t.nome)}"></div><div><label class="f">Início</label><input class="in" type="time" data-tn="${i}" data-f="ini" value="${esc(t.ini)}"></div><div><label class="f">Fim</label><input class="in" type="time" data-tn="${i}" data-f="fim" value="${esc(t.fim)}"></div></div>`).join('')}</div>
+    <div style="display:flex;gap:10px;align-items:center;margin-top:12px"><span class="saved" id="tsv">${custom ? 'Turnos personalizados' : 'Turnos padrão'}</span><button class="btn sm" id="tReset" type="button">Restaurar padrão</button></div>`;
+  const save = debounce(async () => {
+    const lista = [];
+    card.querySelectorAll('[data-tn]').forEach(el => { (lista[+el.dataset.tn] = lista[+el.dataset.tn] || {})[el.dataset.f] = el.value; });
+    if (lista.some(t => !t.ini || !t.fim)) { $('#tsv').textContent = 'Preencha início e fim de todos os turnos'; return; }
+    lista.forEach((t, i) => { t.nome = (t.nome || '').trim() || ('Turno ' + (i + 1)); });
+    await Store.set('config', 'turnos', { lista }); $('#tsv').textContent = 'Turnos salvos ✓';
+  }, 700);
+  card.querySelectorAll('[data-tn]').forEach(el => el.oninput = () => { $('#tsv').textContent = 'Salvando…'; save(); });
+  $('#tReset').onclick = async () => { if (confirm('Voltar aos turnos padrão (06–14, 14–22, 22–06)?')) { await Store.del('config', 'turnos'); wireTurnos(); } };
+}
+
 /* ---------- operador ---------- */
 function askUser(force) {
   if (Store.user && !force) return;
@@ -745,9 +1136,12 @@ function askUser(force) {
 }
 
 /* ---------- boot ---------- */
+let lastAcc = '';
 Store.on(col => {
   renderConn();
   if (col === 'conn') return;
+  if (col === 'config' && Auth.inside) { const sg = JSON.stringify(access()); if (sg !== lastAcc) { lastAcc = sg; renderNav(); render(); return; } }
+  if (col === 'config' && tab === 'config' && ACCV) ACCV();
   if (tab === 'cadastro' && CAD) {
     if (col === 'motoristas') keepFocus(CAD.drawM);
     else if (col === 'transportadoras') keepFocus(() => { CAD.drawDL(); CAD.drawT(); CAD.drawM(); });
@@ -756,6 +1150,7 @@ Store.on(col => {
   else if (tab === 'historico' && col === 'historico') viewHist($('#main'));
   else if (tab === 'romaneio' && ['motoristas', 'transportadoras', 'pessoal', 'config'].includes(col) && !document.activeElement?.closest?.('#main')) render();
   else if (tab === 'config' && col === 'config' && !document.activeElement?.closest?.('#main')) render();
+  else if (tab === 'indicadores' && INDV && (col === 'historico' || col === 'config')) INDV();
 });
 /* =====================================================================
    LOGIN  (usuário + senha  →  Firebase Authentication e-mail/senha)
@@ -787,7 +1182,7 @@ const Auth = {
     Store.startSync();
     $('#app').classList.remove('locked'); $('#main').classList.remove('gmode');
     $('#main').innerHTML = '<div class="empty">Carregando…</div>';
-    renderConn(); renderNav(); render();
+    renderConn(); renderNav(); render(); registerAcesso();
     setTimeout(() => { if (Store.ready && !Store.data.motoristas.size) toast('Base vazia — use Configurações › Importar base da planilha'); }, 3000);
   },
   leave() {
