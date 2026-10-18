@@ -86,9 +86,6 @@ code{background:var(--surface2);padding:1px 6px;border-radius:4px;font-family:va
 /* tabela estilo planilha (cabeçalho na paleta da ferramenta) */
 .sheetw{max-height:calc(100dvh - 330px);border:0;border-radius:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
 table.sheet{table-layout:fixed}
-.sheet td input,.sheet td select{padding:7px 8px}
-.sheet td.tn{padding:7px 8px}
-.sheet th{padding:8px 6px}
 .sheet th{background:var(--accent);color:var(--accent-ink);text-align:center;font-size:12.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;padding:9px 6px;border:1px solid #00000040;z-index:3}
 .sheet td{padding:0;border:1px solid var(--border);vertical-align:middle}
 .sheet tbody tr{cursor:default}
@@ -748,7 +745,7 @@ function viewCadastro(m) {
     <div class="tools" style="padding:12px 14px;margin:0"><input class="in" id="mq" placeholder="Buscar nome, CPF, RG, placa, código…" value="${esc(mq)}">
       <select class="in" id="mf" style="max-width:280px"></select><span class="sub" id="mcount" style="margin:0"></span></div>
     <div class="tw sheetw"><table class="sheet" id="tbM">
-      <colgroup id="cgM"><col><col><col><col><col><col><col><col><col></colgroup>
+      <colgroup><col style="width:14%"><col style="width:20%"><col style="width:9%"><col style="width:11%"><col style="width:10%"><col style="width:16%"><col style="width:7%"><col style="width:9%"><col style="width:4%"></colgroup>
       <thead><tr><th>CPF</th><th>NOME</th><th>RG</th><th>CODIGO</th><th>PLACA</th><th>TRANSP.</th><th>ATALHO</th><th>PERFIL</th><th></th></tr>
       <tr class="newrow"><td class="c"><input class="mono" data-n="cpf" maxlength="14" placeholder="Novo CPF"></td><td><input data-n="nome" placeholder="NOME DO MOTORISTA"></td><td class="c"><input data-n="rg" placeholder="RG"></td><td class="c"><input data-n="transp" list="dlCodes" placeholder="CÓDIGO"></td><td class="c"><input class="mono" data-n="placa" maxlength="8" placeholder="PLACA"></td><td class="tn" id="nTn">—</td><td colspan="3" class="c"><button class="btn pri sm" id="nAdd">+ Adicionar</button></td></tr></thead>
       <tbody id="bM"></tbody></table></div>
@@ -769,39 +766,12 @@ function viewCadastro(m) {
     const cur = mf; $('#mf').innerHTML = '<option value="">Todas as transportadoras</option>' + Store.list('transportadoras').sort(byName).map(t => `<option value="${esc(t.id)}" ${cur === t.id ? 'selected' : ''}>${esc(t.nome)}</option>`).join('');
   };
   const tnCell = c => { const n = transpName(c); return n ? esc(n) : (c ? '<span class="warn">código sem transportadora</span>' : ''); };
-  const fitCols = () => {
-    const cg = $('#cgM'); if (!cg) return;
-    const cv = fitCols.cv || (fitCols.cv = document.createElement('canvas')).getContext('2d');
-    const probe = $('#bM input[data-k]') || $('.newrow input'); if (!probe) return;
-    const cs = getComputedStyle(probe), mono = getComputedStyle(document.documentElement).getPropertyValue('--mono') || 'monospace';
-    const fS = `${cs.fontSize} ${cs.fontFamily}`, fM = `${cs.fontSize} ${mono}`;
-    const w = (t, f) => { cv.font = f; return cv.measureText(t || '').width; };
-    const rows = [...document.querySelectorAll('#bM tr[data-id]')];
-    const col = (i, f, min, max, extra, ph) => {
-      let m = ph ? w(ph, f) : 0;
-      rows.forEach(tr => { const c = tr.children[i]; if (!c) return; const el = c.querySelector('input,select'); const t = el ? (el.tagName === 'SELECT' ? el.options[el.selectedIndex]?.text : el.value) : c.textContent; m = Math.max(m, w(t, f)); });
-      return Math.round(Math.min(max, Math.max(min, m + extra)));
-    };
-    const hdr = (t) => w(t, '800 12.5px ' + cs.fontFamily) + t.length * .6 + 18;
-    const wd = [
-      Math.max(col(0, fM, 0, 400, 22, '000.000.000-00'), hdr('CPF')),
-      Math.max(col(1, fS, 0, 420, 24, 'NOME DO MOTORISTA'), hdr('NOME')),
-      Math.max(col(2, fS, 0, 220, 30, 'RG'), hdr('RG')),
-      Math.max(col(3, fM, 0, 220, 30, 'CÓDIGO'), hdr('CODIGO')),
-      Math.max(col(4, fM, 0, 220, 34, 'PLACA'), hdr('PLACA')),
-      Math.max(col(5, '13px ' + cs.fontFamily, 0, 360, 22, ''), hdr('TRANSP.')),
-      Math.max(col(6, fS, 0, 220, 22, ''), hdr('ATALHO')),
-      Math.max(col(7, fS, 0, 220, 62, 'Completo'), hdr('PERFIL')),
-      40];
-    [...cg.children].forEach((c, i) => { c.style.width = wd[i] ? Math.round(wd[i]) + 'px' : ''; });
-    const t = $('#tbM'); if (t) t.style.width = Math.round(wd.reduce((a, b) => a + b, 0)) + 'px';
-  };
   const drawM = () => {
     const all = Store.list('motoristas');
     if (!ordIds || ordIds.length !== all.length) ordIds = all.sort(byName).map(x => x.cpf);
     const n = norm(mq).trim(), d = digits(mq);
     const rows = ordIds.map(id => Store.get('motoristas', id)).filter(x => x && (!mf || idOf(x.transp) === mf) && (!n || norm(x.nome).includes(n) || norm(x.placa).includes(n) || norm(x.transp).includes(n) || norm(x.rg).includes(n) || norm(x.atalho).includes(n) || (d && x.cpf.includes(d))));
-    const per = Math.max(1, rows.length), pages = 1;
+    const per = 100, pages = Math.max(1, Math.ceil(rows.length / per));
     if (flashId) { const ix = rows.findIndex(r => r.cpf === flashId); if (ix >= 0) mpage = Math.floor(ix / per); }
     mpage = Math.min(mpage, pages - 1);
     $('#bM').innerHTML = rows.slice(mpage * per, mpage * per + per).map(x => `<tr data-id="${x.cpf}" class="${x.cpf === flashId ? 'flash' : ''}">
@@ -811,9 +781,9 @@ function viewCadastro(m) {
       <td class="tn">${tnCell(x.transp)}</td><td class="c"><input data-k="atalho" value="${esc(x.atalho)}"></td>
       <td class="c"><select data-k="perfil"><option value="">Completo</option><option value="curto" ${x.perfil === 'curto' ? 'selected' : ''}>Curto</option></select></td>
       <td class="c"><button class="btn sm danger" data-del title="Excluir">✕</button></td></tr>`).join('') || `<tr><td colspan="9" class="empty">${Store.ready ? 'Nenhum motorista encontrado.' : 'Carregando…'}</td></tr>`;
-    fitCols();
     $('#mcount').textContent = `${rows.length} de ${all.length} motoristas`;
-    $('#pg').style.display = 'none';
+    $('#pg').innerHTML = `<span class="sub" style="margin:0">Página ${mpage + 1}/${pages}</span><button class="btn sm" id="pp" ${mpage ? '' : 'disabled'}>‹</button><button class="btn sm" id="pn" ${mpage < pages - 1 ? '' : 'disabled'}>›</button>`;
+    $('#pp').onclick = () => { mpage--; drawM(); }; $('#pn').onclick = () => { mpage++; drawM(); };
     if (flashId) { const f = $('#bM .flash'); if (f) f.scrollIntoView({ block: 'center' }); const id = flashId; flashId = ''; setTimeout(() => $(`#bM tr[data-id="${id}"]`)?.classList.remove('flash'), 2500); }
   };
   const drawT = () => { $('#bT').innerHTML = Store.list('transportadoras').sort(byName).map(r => `<tr data-id="${esc(r.id)}"><td class="c"><input class="mono ro" value="${esc(r.id)}" readonly tabindex="-1"></td><td><input data-k="nome" value="${esc(r.nome)}"></td><td class="c"><button class="btn sm danger" data-del>✕</button></td></tr>`).join('') || '<tr><td colspan="3" class="empty">Nenhuma transportadora.</td></tr>'; };
@@ -836,7 +806,6 @@ function viewCadastro(m) {
     tbody.addEventListener('click', async e => { const b = e.target.closest('[data-del]'); if (!b) return; const id = b.closest('tr').dataset.id;
       if (confirm('Excluir para TODOS os usuários?')) { await Store.del(col, id); svst('Excluído ✓'); if (col === 'transportadoras') { drawDL(); drawM(); } } });
   };
-  $('#bM').addEventListener('change', fitCols); (document.fonts?.ready || Promise.resolve()).then(fitCols);
   wire($('#bM'), 'motoristas'); wire($('#bT'), 'transportadoras'); wire($('#bE'), 'pessoal');
 
   /* ----- novo motorista (linha de entrada no topo da própria tabela) ----- */
