@@ -487,6 +487,13 @@ function buildPaste(R, drv) {
     conf1: R.conf[0], conf2: R.conf[1], conf3: R.conf[2], ajud1: R.ajud[0], ajud2: R.ajud[1], ajud3: R.ajud[2]
   };
   let lines = L.linhas.map(t => t.replace(/\{(\w+)(?:\|([^}]*))?\}/g, (_, k, fb) => { const v = map[k]; return (v !== undefined && v !== null && v !== '') ? v : (fb ?? ''); }));
+  /* layout salvo com marcadores (. / LACR) nas linhas 7-12 e sem campos da Equipe: usa o que foi digitado nessas posições */
+  if (!L.linhas.some(t => /\{(conf|ajud)\d/.test(t))) {
+    [R.conf[0], R.conf[1], R.conf[2], R.ajud[0], R.ajud[1], R.ajud[2]].forEach((v, i) => {
+      const t = lines[6 + i];
+      if (v && t !== undefined && ['.', 'LACR'].includes(String(t).trim())) lines[6 + i] = v;
+    });
+  }
   if (drv && drv.perfil === 'curto') lines = lines.slice(0, L.linhasCurto);
   return lines;
 }
@@ -663,7 +670,7 @@ function viewRomaneio(m) {
       </div>
     </div>
     <div class="grid">
-      <div class="card"><h3>Espelho da tela do sistema</h3><div class="term"><div class="box"><pre id="scr"></pre></div></div></div>
+      <div class="card"><h3>Espelho da tela do GAN</h3><div class="term"><div class="box"><pre id="scr"></pre></div></div></div>
       <div class="card"><h3>Texto de colagem <span id="cnt" style="text-transform:none;letter-spacing:0"></span></h3>
         <div class="paste" id="paste"></div><div class="ruler" id="ruler"></div>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
