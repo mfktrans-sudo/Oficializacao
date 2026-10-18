@@ -85,7 +85,7 @@ code{background:var(--surface2);padding:1px 6px;border-radius:4px;font-family:va
 
 /* tabela estilo planilha (cabeçalho na paleta da ferramenta) */
 .sheetw{max-height:calc(100dvh - 330px);border:0;border-radius:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-table.sheet{table-layout:fixed;width:100%;min-width:max-content}
+table.sheet{table-layout:fixed}
 .sheet td input,.sheet td select{padding:7px 8px}
 .sheet td.tn{padding:7px 8px}
 .sheet th{padding:8px 6px}
@@ -785,7 +785,7 @@ function viewCadastro(m) {
     const hdr = (t) => w(t, '800 12.5px ' + cs.fontFamily) + t.length * .6 + 18;
     const wd = [
       Math.max(col(0, fM, 0, 400, 22, '000.000.000-00'), hdr('CPF')),
-      0, /* NOME: flexível (ocupa a sobra) */
+      Math.max(col(1, fS, 0, 420, 24, 'NOME DO MOTORISTA'), hdr('NOME')),
       Math.max(col(2, fS, 0, 220, 30, 'RG'), hdr('RG')),
       Math.max(col(3, fM, 0, 220, 30, 'CÓDIGO'), hdr('CODIGO')),
       Math.max(col(4, fM, 0, 220, 34, 'PLACA'), hdr('PLACA')),
@@ -794,14 +794,14 @@ function viewCadastro(m) {
       Math.max(col(7, fS, 0, 220, 62, 'Completo'), hdr('PERFIL')),
       40];
     [...cg.children].forEach((c, i) => { c.style.width = wd[i] ? Math.round(wd[i]) + 'px' : ''; });
-    const t = $('#tbM'); if (t) { const fixed = wd.reduce((a, b) => a + b, 0); t.style.minWidth = (fixed + 220) + 'px'; }
+    const t = $('#tbM'); if (t) t.style.width = Math.round(wd.reduce((a, b) => a + b, 0)) + 'px';
   };
   const drawM = () => {
     const all = Store.list('motoristas');
     if (!ordIds || ordIds.length !== all.length) ordIds = all.sort(byName).map(x => x.cpf);
     const n = norm(mq).trim(), d = digits(mq);
     const rows = ordIds.map(id => Store.get('motoristas', id)).filter(x => x && (!mf || idOf(x.transp) === mf) && (!n || norm(x.nome).includes(n) || norm(x.placa).includes(n) || norm(x.transp).includes(n) || norm(x.rg).includes(n) || norm(x.atalho).includes(n) || (d && x.cpf.includes(d))));
-    const per = 100, pages = Math.max(1, Math.ceil(rows.length / per));
+    const per = Math.max(1, rows.length), pages = 1;
     if (flashId) { const ix = rows.findIndex(r => r.cpf === flashId); if (ix >= 0) mpage = Math.floor(ix / per); }
     mpage = Math.min(mpage, pages - 1);
     $('#bM').innerHTML = rows.slice(mpage * per, mpage * per + per).map(x => `<tr data-id="${x.cpf}" class="${x.cpf === flashId ? 'flash' : ''}">
@@ -813,8 +813,7 @@ function viewCadastro(m) {
       <td class="c"><button class="btn sm danger" data-del title="Excluir">✕</button></td></tr>`).join('') || `<tr><td colspan="9" class="empty">${Store.ready ? 'Nenhum motorista encontrado.' : 'Carregando…'}</td></tr>`;
     fitCols();
     $('#mcount').textContent = `${rows.length} de ${all.length} motoristas`;
-    $('#pg').innerHTML = `<span class="sub" style="margin:0">Página ${mpage + 1}/${pages}</span><button class="btn sm" id="pp" ${mpage ? '' : 'disabled'}>‹</button><button class="btn sm" id="pn" ${mpage < pages - 1 ? '' : 'disabled'}>›</button>`;
-    $('#pp').onclick = () => { mpage--; drawM(); }; $('#pn').onclick = () => { mpage++; drawM(); };
+    $('#pg').style.display = 'none';
     if (flashId) { const f = $('#bM .flash'); if (f) f.scrollIntoView({ block: 'center' }); const id = flashId; flashId = ''; setTimeout(() => $(`#bM tr[data-id="${id}"]`)?.classList.remove('flash'), 2500); }
   };
   const drawT = () => { $('#bT').innerHTML = Store.list('transportadoras').sort(byName).map(r => `<tr data-id="${esc(r.id)}"><td class="c"><input class="mono ro" value="${esc(r.id)}" readonly tabindex="-1"></td><td><input data-k="nome" value="${esc(r.nome)}"></td><td class="c"><button class="btn sm danger" data-del>✕</button></td></tr>`).join('') || '<tr><td colspan="3" class="empty">Nenhuma transportadora.</td></tr>'; };
