@@ -291,6 +291,7 @@ main.gmode{display:flex;padding:24px 16px}
     <nav id="nav"></nav>
     <span class="chip" id="opchip"></span>
     <span class="chip" id="conn"><span class="dot"></span><span id="connTxt">…</span></span>
+    <span class="chip ok" id="onl" style="display:none"><span class="dot"></span><span id="onlTxt"></span></span>
     <button class="btn sm" id="logout" type="button">Sair</button>
   </header>
   <main id="main"></main>
@@ -394,11 +395,20 @@ const Store = {
       /* config: includeMetadataChanges=true para avisar quando o snapshot deixa de ser "do cache" e passa a ser do servidor */
       this.unsubs.push(F.onSnapshot(q, { includeMetadataChanges: col === 'config' }, snap => {
         const chg = snap.docChanges();
-        chg.forEach(ch => { if (ch.type === 'removed') this.data[col].delete(ch.doc.id); else this.data[col].set(ch.doc.id, { ...ch.doc.data({ serverTimestamps: 'estimate' }), id: ch.doc.id }); });
+        /* batimento de presença (campo "visto") não é mudança de configuração: não dispara re-render das abas */
+        const strip = o => { const r = { ...o }; delete r.visto; delete r.updatedAtLocal; return JSON.stringify(Object.keys(r).sort().map(k => [k, r[k]])); };
+        let real = 0, beat = 0;
+        chg.forEach(ch => {
+          if (ch.type === 'removed') { this.data[col].delete(ch.doc.id); real++; return; }
+          const nd = { ...ch.doc.data({ serverTimestamps: 'estimate' }), id: ch.doc.id }, pv = this.data[col].get(ch.doc.id);
+          if (col === 'config' && ch.type === 'modified' && pv && strip(pv) === strip(nd)) beat++; else real++;
+          this.data[col].set(ch.doc.id, nd);
+        });
         const first = !this.loaded[col], flipped = !snap.metadata.fromCache && !this.synced[col];
         if (!snap.metadata.fromCache) this.synced[col] = true;
         this.loaded[col] = true; this.ready = true;
-        if (col !== 'config' || first || chg.length || flipped) this.emit(col);
+        if (col !== 'config') this.emit(col);
+        else { if (first || real || flipped) this.emit('config'); if (first || real || beat || flipped) this.emit('presence'); }
       }, err => { this.error = 'Leitura negada/erro: ' + err.code; this.emit('conn'); }));
     }
     /* segurança: se o servidor não confirmar em 12 s, segue com o cache — mas SEM liberar acesso total */
@@ -504,7 +514,7 @@ let R = LS.get('rom_draft_' + (Store.user || ''), null) || { cpf: '', placa: '',
 const saveDraft = () => LS.set('rom_draft_' + (Store.user || ''), R);   // rascunho é POR USUÁRIO/NAVEGADOR
 let mq = '', mf = '', mpage = 0;
 
-let INDV = null, ACCV = null;
+let INDV = null, ACCV = null, PRESV = null;
 
 /* ---------- ACESSO: perfis (Administrador / Restrito) e abas liberadas ----------
    Guardado em config/acesso_<login>. Enquanto NÃO existir nenhum administrador, todos têm acesso total
@@ -537,7 +547,51 @@ const isAdm = () => access().adm;
 const firstTab = () => (visibleTabs()[0] || ['romaneio'])[0];
 function registerAcesso() {
   const k = myKey(); if (!k || Store.mode !== 'firebase') return;
-  Store.set('config', 'acesso_' + k, { login: k, nome: Store.user || '', ultimoAcesso: Date.now() });
+  Store.set('config', 'acesso_' + k, { login: k, nome: Store.user || '', ultimoAcesso: Date.now(), visto: Date.now() });
+}
+
+/* ---------- PRESENÇA: quem está online ----------
+   Cada usuário "bate o ponto" a cada 45 s no próprio registro config/acesso_<login> (campo visto).
+   Online = sinal nos últimos 150 s. Não usa coleção nova (evita depender de regras do Firestore). */
+const ONLINE_MS = 150000, BEAT_MS = 45000;
+const Presence = {
+  timer: null, tick: null,
+  online() { const lim = Date.now() - ONLINE_MS; return acList().filter(a => a.visto && a.visto > lim); },
+  async beat(val) {
+    const k = myKey(); if (!k || Store.mode !== 'firebase' || !Auth.inside || !Store.fb) return;
+    const { F, db } = Store.fb;
+    try { await F.setDoc(F.doc(db, 'config', 'acesso_' + k), { login: k, visto: val === undefined ? Date.now() : val }, { merge: true }); } catch {}
+  },
+  start() {
+    this.stop(); this.beat();
+    this.timer = setInterval(() => this.beat(), BEAT_MS);
+    this.tick = setInterval(() => Store.emit('presence'), 30000);   // expira quem parou de dar sinal
+  },
+  stop() { clearInterval(this.timer); clearInterval(this.tick); this.timer = this.tick = null; },
+  async off() { this.stop(); await this.beat(0); }
+};
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') Presence.beat(); });
+window.addEventListener('pagehide', () => { Presence.beat(0); });
+function renderOnline() {
+  const el = $('#onl'); if (!el) return;
+  if (Store.mode !== 'firebase' || !Auth.inside || !Store.loaded.config) { el.style.display = 'none'; return; }
+  const on = Presence.online();
+  el.style.display = ''; $('#onlTxt').textContent = on.length + ' online';
+  el.title = on.map(a => a.login || String(a.id).slice(7)).sort().join(', ');
+}
+function wireOnline() {
+  const card = $('#onCard'); if (!card) return;
+  const draw = () => {
+    const now = Date.now(), lim = now - ONLINE_MS, me = myKey();
+    const last = a => a.visto || a.ultimoAcesso || 0;
+    const rows = acList().map(a => ({ k: String(a.id).slice(7), a, on: !!(a.visto && a.visto > lim) })).sort((x, y) => (y.on - x.on) || (last(y.a) - last(x.a)));
+    const n = rows.filter(r => r.on).length;
+    const ago = t => { if (!t) return '—'; const sec = Math.max(0, Math.round((now - t) / 1000)); if (sec < 60) return 'agora'; if (sec < 3600) return 'há ' + Math.floor(sec / 60) + ' min'; if (sec < 86400) return 'há ' + Math.floor(sec / 3600) + ' h'; return new Date(t).toLocaleString('pt-BR'); };
+    card.innerHTML = `<h3>Usuários online</h3>
+      <p class="sub" style="font-size:12.5px"><b>${n}</b> online agora, de ${rows.length} usuário(s) já cadastrados. Conta como online quem está com o sistema aberto (sinal a cada 45 s).</p>
+      <div class="tw" style="max-height:340px"><table><thead><tr><th>Usuário</th><th>Status</th><th>Visto por último</th></tr></thead><tbody>${rows.length ? rows.map(r => `<tr style="cursor:default"><td><b>${esc(r.a.login || r.k)}</b>${r.k === me ? ' <small class="warn">(você)</small>' : ''}<br><small style="color:var(--faint)">${esc(r.a.nome || '')}</small></td><td><span class="chip ${r.on ? 'ok' : ''}"><span class="dot"></span>${r.on ? 'Online' : 'Offline'}</span></td><td>${ago(last(r.a))}</td></tr>`).join('') : '<tr><td colspan="3" style="color:var(--faint)">Nenhum usuário cadastrado ainda.</td></tr>'}</tbody></table></div>`;
+  };
+  PRESV = draw; draw();
 }
 
 function renderNav() {
@@ -559,7 +613,7 @@ function render() {
   const m = $('#main');
   if (!access().ready) { m.innerHTML = '<div class="empty">Carregando permissões…</div>'; return; }
   if (!canTab(tab)) { tab = firstTab(); LS.set('rom_tab', tab); renderNav(); }
-  if (tab !== 'cadastro') CAD = null; if (tab !== 'indicadores') INDV = null; if (tab !== 'config') ACCV = null;
+  if (tab !== 'cadastro') CAD = null; if (tab !== 'indicadores') INDV = null; if (tab !== 'config') { ACCV = null; PRESV = null; }
   ({ romaneio: viewRomaneio, cadastro: viewCadastro, historico: viewHist, indicadores: viewInd, config: viewConfig }[tab])(m);
 }
 
@@ -1046,9 +1100,10 @@ function viewConfig(m) {
     <p class="sub" style="font-size:12px;margin-top:10px">CSV com colunas: CPF;NOME;RG;CODIGO;PLACA;ATALHO (separador ; ou ,). CPFs existentes são atualizados, os demais criados.</p>
     <div class="kv" style="margin-top:8px"><b>Motoristas</b><span>${Store.data.motoristas.size}</span><b>Transportadoras</b><span>${Store.data.transportadoras.size}</span><b>Equipe</b><span>${Store.data.pessoal.size}</span></div></div>
   </div></div>
+  <div class="card" id="onCard" style="margin-top:16px"></div>
   <div class="card" id="accCard" style="margin-top:16px"></div>
   <div class="card" id="turCard" style="margin-top:16px"></div>`;
-  wireAcesso(); wireTurnos();
+  wireOnline(); wireAcesso(); wireTurnos();
   const saveLayout = debounce(async () => { await Store.set('config', 'layout', { placaLen: +$('#cLen').value || 160, linhasCurto: +$('#cCur').value || 12, confirma: $('#cConf').value, linhasTxt: $('#cSeq').value }); $('#lsv').textContent = 'Layout salvo ✓'; }, 700);
   ['#cLen', '#cCur', '#cConf', '#cSeq'].forEach(s => $(s).oninput = () => { $('#lsv').textContent = 'Salvando…'; saveLayout(); });
   $('#cReset').onclick = async () => { if (confirm('Voltar ao layout padrão para todos?')) { await Store.del('config', 'layout'); render(); } };
@@ -1154,6 +1209,7 @@ let lastAcc = '';
 Store.on(col => {
   renderConn();
   if (col === 'conn') return;
+  if (col === 'presence') { renderOnline(); if (tab === 'config' && PRESV) PRESV(); return; }
   if (col === 'config' && Auth.inside) { const sg = JSON.stringify(access()); if (sg !== lastAcc) { lastAcc = sg; renderNav(); render(); return; } }
   if (col === 'config' && tab === 'config' && ACCV) ACCV();
   if (tab === 'cadastro' && CAD) {
@@ -1196,16 +1252,16 @@ const Auth = {
     Store.startSync();
     $('#app').classList.remove('locked'); $('#main').classList.remove('gmode');
     $('#main').innerHTML = '<div class="empty">Carregando…</div>';
-    renderConn(); renderNav(); render(); registerAcesso();
+    renderConn(); renderNav(); render(); registerAcesso(); Presence.start(); renderOnline();
     setTimeout(() => { if (Store.ready && !Store.data.motoristas.size) toast('Base vazia — use Configurações › Importar base da planilha'); }, 3000);
   },
   leave() {
-    if (this.inside) { Store.stopSync(); this.inside = false; }
+    if (this.inside) { Presence.stop(); Store.stopSync(); this.inside = false; renderOnline(); }
     this.user = null; $('#app').classList.add('locked'); this.showLogin();
   },
   async logout() {
     const { F, db, AU, auth } = Store.fb;
-    try { Store.stopSync(); await AU.signOut(auth); await F.terminate(db); await F.clearIndexedDbPersistence(db); } catch (e) { console.warn(e); }
+    try { await Promise.race([Presence.off(), new Promise(r => setTimeout(r, 1500))]); Store.stopSync(); await AU.signOut(auth); await F.terminate(db); await F.clearIndexedDbPersistence(db); } catch (e) { console.warn(e); }
     location.reload();
   },
   showLoading() {
