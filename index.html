@@ -342,7 +342,7 @@ const LS = { get: (k, d) => { try { const v = localStorage.getItem(k); return v 
 const DEFAULT_LAYOUT = {
   placaLen: 160,          // tamanho total da linha da placa (espaços à esquerda + placa) — igual à planilha
   confirma: '-> Deseja continuar mesmo assim? S',
-  linhas: ['{cpf}','{nome}','{rg}','{transp}','{confirma}','{placa}','.','.','.','LACR','LACR','.','.','.','.',''],
+  linhas: ['{cpf}','{nome}','{rg}','{transp}','{confirma}','{placa}','{conf1|.}','{conf2|.}','{conf3|.}','{ajud1|LACR}','{ajud2|LACR}','{ajud3|.}','.','.','.',''],
   linhasCurto: 12         // perfil "curto" (TEX/SEDEX copiavam A4:A15)
 };
 
@@ -468,7 +468,10 @@ const Store = {
 /* ---------- dados auxiliares ---------- */
 const idOf = code => String(code || '').replace(/\u00a0/g, ' ').trim().toUpperCase().replace(/[\/\s]+/g, '');
 const transpName = code => { const t = Store.get('transportadoras', idOf(code)); return t ? t.nome : ''; };
-const layout = () => { const c = Store.get('config', 'layout'); return { ...DEFAULT_LAYOUT, ...(c ? { placaLen: c.placaLen ?? DEFAULT_LAYOUT.placaLen, confirma: c.confirma ?? DEFAULT_LAYOUT.confirma, linhasCurto: c.linhasCurto ?? DEFAULT_LAYOUT.linhasCurto, linhas: c.linhasTxt ? String(c.linhasTxt).split('\n') : DEFAULT_LAYOUT.linhas } : {}) }; };
+/* layout salvo com as linhas 7-12 antigas (., ., ., LACR, LACR, .) = valores fixos: troca pelos campos da Equipe (vazio mantém o valor antigo) */
+const EQUIPE_ANTIGA = ['.', '.', '.', 'LACR', 'LACR', '.'], EQUIPE_NOVA = ['{conf1|.}', '{conf2|.}', '{conf3|.}', '{ajud1|LACR}', '{ajud2|LACR}', '{ajud3|.}'];
+const withEquipe = ls => (ls.length >= 12 && EQUIPE_ANTIGA.every((v, i) => String(ls[6 + i]).trim() === v)) ? [...ls.slice(0, 6), ...EQUIPE_NOVA, ...ls.slice(12)] : ls;
+const layout = () => { const c = Store.get('config', 'layout'); return { ...DEFAULT_LAYOUT, ...(c ? { placaLen: c.placaLen ?? DEFAULT_LAYOUT.placaLen, confirma: c.confirma ?? DEFAULT_LAYOUT.confirma, linhasCurto: c.linhasCurto ?? DEFAULT_LAYOUT.linhasCurto, linhas: c.linhasTxt ? withEquipe(String(c.linhasTxt).replace(/\r/g, '').split('\n')) : DEFAULT_LAYOUT.linhas } : {}) }; };
 const equipe = tipo => Store.list('pessoal').filter(p => p.tipo === tipo && p.ativo !== false).map(p => p.nome).sort((a, b) => a.localeCompare(b, 'pt'));
 
 /* =====================================================================
@@ -483,7 +486,7 @@ function buildPaste(R, drv) {
     placa: placa ? placa.padStart(Math.max(L.placaLen, placa.length), ' ') : '',
     conf1: R.conf[0], conf2: R.conf[1], conf3: R.conf[2], ajud1: R.ajud[0], ajud2: R.ajud[1], ajud3: R.ajud[2]
   };
-  let lines = L.linhas.map(t => t.replace(/\{(\w+)\}/g, (_, k) => map[k] ?? ''));
+  let lines = L.linhas.map(t => t.replace(/\{(\w+)(?:\|([^}]*))?\}/g, (_, k, fb) => { const v = map[k]; return (v !== undefined && v !== null && v !== '') ? v : (fb ?? ''); }));
   if (drv && drv.perfil === 'curto') lines = lines.slice(0, L.linhasCurto);
   return lines;
 }
