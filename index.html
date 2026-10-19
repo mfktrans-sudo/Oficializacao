@@ -644,7 +644,11 @@ function searchDrivers(q) {
   }
   return out;
 }
+/* aba Romaneio: placa sempre no formato 000-0000 (hífen automático) e campos da Equipe sempre em MAIÚSCULAS */
+const fmtPlaca = v => { const a = String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7); return a.length > 3 ? a.slice(0, 3) + '-' + a.slice(3) : a; };
+const upTxt = v => String(v ?? '').toUpperCase();
 function viewRomaneio(m) {
+  R.placa = fmtPlaca(R.placa); R.conf = [0, 1, 2].map(i => upTxt(R.conf[i])); R.ajud = [0, 1, 2].map(i => upTxt(R.ajud[i]));
   const drv = R.cpf ? Store.get('motoristas', R.cpf) : null;
   const conf = equipe('conferente'), aj = equipe('ajudante');
   const atalhos = Store.list('motoristas').filter(x => x.atalho).sort((a, b) => a.atalho.localeCompare(b.atalho));
@@ -666,13 +670,13 @@ function viewRomaneio(m) {
           <div style="margin-top:12px"><button class="btn sm" id="edDrv">Editar cadastro</button></div>` : `<p class="sub" style="margin-top:14px">Nenhum motorista selecionado.</p>`}
       </div>
       <div class="card"><h3>2 · Veículo</h3>
-        <div class="row" style="grid-template-columns:1fr auto"><div><label class="f">Placa deste romaneio</label><input class="in mono" id="placa" maxlength="8" placeholder="ABC-1D23" value="${esc(R.placa)}"></div>
+        <div class="row" style="grid-template-columns:1fr auto"><div><label class="f">Placa deste romaneio</label><input class="in mono" id="placa" maxlength="8" placeholder="ABC-1D23" autocapitalize="characters" value="${esc(R.placa)}"></div>
         <div style="align-self:end"><button class="btn" id="savePlaca" ${drv ? '' : 'disabled'} title="Grava a placa na ficha do motorista">Gravar no cadastro</button></div></div>
-        ${drv && drv.placa && drv.placa !== R.placa ? `<div class="warn">Placa cadastrada: ${esc(drv.placa)} <a href="#" id="usePl" style="color:var(--info)">usar</a></div>` : ''}
+        ${drv && drv.placa && fmtPlaca(drv.placa) !== R.placa ? `<div class="warn">Placa cadastrada: ${esc(fmtPlaca(drv.placa))} <a href="#" id="usePl" style="color:var(--info)">usar</a></div>` : ''}
       </div>
       <div class="card"><h3>3 · Equipe</h3>
-        <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">Conferente ${i + 1}</label><input class="in" data-c="${i}" list="dlConf" autocomplete="off" value="${esc(R.conf[i])}"></div>`).join('')}</div>
-        <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">${i === 0 ? 'Ajudante 1: LACR:' : 'Ajudante ' + (i + 1)}</label><input class="in" data-a="${i}" list="dlAj" autocomplete="off" value="${esc(R.ajud[i])}"></div>`).join('')}</div>
+        <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">Conferente ${i + 1}</label><input class="in" data-c="${i}" list="dlConf" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" value="${esc(R.conf[i])}"></div>`).join('')}</div>
+        <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">${i === 0 ? 'Ajudante 1: LACR:' : 'Ajudante ' + (i + 1)}</label><input class="in" data-a="${i}" list="dlAj" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" value="${esc(R.ajud[i])}"></div>`).join('')}</div>
         <datalist id="dlConf">${conf.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
         <datalist id="dlAj">${(aj.length ? aj : conf).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
       </div>
@@ -699,15 +703,19 @@ function viewRomaneio(m) {
   };
   refresh();
   const q = $('#q'), sl = $('#sl'); let hl = -1, res = [];
-  const pick = c => { R.cpf = c; const d = Store.get('motoristas', c); R.placa = d?.placa || ''; saveDraft(); render(); };
+  const pick = c => { R.cpf = c; const d = Store.get('motoristas', c); R.placa = fmtPlaca(d?.placa); saveDraft(); render(); };
   q.oninput = () => { res = searchDrivers(q.value); hl = -1; sl.hidden = !res.length; sl.innerHTML = res.map((x, i) => `<div data-i="${i}">${esc(x.nome)}<small>${fmtCpf(x.cpf)} · ${esc(x.transp)} ${esc(transpName(x.transp))}${x.placa ? ' · ' + esc(x.placa) : ''}</small></div>`).join(''); sl.querySelectorAll('div').forEach(d => d.onclick = () => pick(res[+d.dataset.i].cpf)); };
   q.onkeydown = e => { const it = [...sl.children]; if (e.key === 'ArrowDown') { hl = Math.min(hl + 1, it.length - 1); } else if (e.key === 'ArrowUp') { hl = Math.max(hl - 1, 0); } else if (e.key === 'Enter' && res.length) { pick(res[Math.max(hl, 0)].cpf); return; } else return; e.preventDefault(); it.forEach((x, i) => x.classList.toggle('hl', i === hl)); };
   m.querySelectorAll('[data-at]').forEach(b => b.onclick = () => pick(b.dataset.at));
-  $('#placa').oninput = e => { R.placa = e.target.value.toUpperCase(); e.target.value = R.placa; saveDraft(); refresh(); };
-  m.querySelectorAll('[data-c]').forEach(s => s.oninput = () => { R.conf[+s.dataset.c] = s.value; saveDraft(); refresh(); });
-  m.querySelectorAll('[data-a]').forEach(s => s.oninput = () => { R.ajud[+s.dataset.a] = s.value; saveDraft(); refresh(); });
+  const setVal = (el, v) => { /* troca o texto mantendo o cursor no mesmo ponto */
+    const pos = el.selectionStart ?? el.value.length, n = el.value.slice(0, pos).replace(/[^A-Za-z0-9]/g, '').length; el.value = v;
+    let k = 0, p = 0; while (p < v.length && k < n) { if (/[A-Z0-9]/.test(v[p])) k++; p++; } try { el.setSelectionRange(p, p); } catch {} };
+  $('#placa').oninput = e => { R.placa = fmtPlaca(e.target.value); if (e.target.value !== R.placa) setVal(e.target, R.placa); saveDraft(); refresh(); };
+  $('#placa').onblur = e => { R.placa = fmtPlaca(e.target.value); e.target.value = R.placa; saveDraft(); refresh(); };
+  m.querySelectorAll('[data-c]').forEach(s => s.oninput = () => { const p = s.selectionStart; s.value = upTxt(s.value); try { s.setSelectionRange(p, p); } catch {} R.conf[+s.dataset.c] = s.value; saveDraft(); refresh(); });
+  m.querySelectorAll('[data-a]').forEach(s => s.oninput = () => { const p = s.selectionStart; s.value = upTxt(s.value); try { s.setSelectionRange(p, p); } catch {} R.ajud[+s.dataset.a] = s.value; saveDraft(); refresh(); });
   const ed = $('#edDrv'); if (ed) ed.onclick = () => { if (!canTab('cadastro')) return toast('Você não tem acesso à aba Cadastro'); mq = R.cpf; mf = ''; mpage = 0; tab = 'cadastro'; LS.set('rom_tab', tab); renderNav(); render(); };
-  const up = $('#usePl'); if (up) up.onclick = e => { e.preventDefault(); R.placa = drv.placa; saveDraft(); render(); };
+  const up = $('#usePl'); if (up) up.onclick = e => { e.preventDefault(); R.placa = fmtPlaca(drv.placa); saveDraft(); render(); };
   $('#savePlaca').onclick = () => { if (drv && R.placa) { Store.set('motoristas', drv.cpf, { placa: R.placa }); toast('Placa gravada no cadastro'); } };
   $('#clear').onclick = () => { R = { cpf: '', placa: '', conf: ['', '', ''], ajud: ['', '', ''] }; saveDraft(); render(); };
   $('#copy').onclick = async () => {
