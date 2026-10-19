@@ -723,7 +723,8 @@ function viewRomaneio(m) {
    Réplica da planilha ROMANEIO_TS: a macro ROMANEAR copia C6:C20 =
    PRÉ · CPF · 4 linhas vazias · PLACA · . · . · LACRE · . · . · . · (vazia) · CPF */
 const TS_KEY = 'rom_ts';
-let TS = LS.get(TS_KEY, null) || { cargas: [], sel: -1, corte: 1, feito: {}, fonte: '', quando: 0, fontes: [], src: '', lacreHdr: '' };
+let TS = LS.get(TS_KEY, null) || { v: 2, cargas: [], sel: -1, corte: 0, feito: {}, fonte: '', quando: 0, fontes: [], src: '', lacreHdr: '' };
+if (!TS.v) { TS.v = 2; TS.corte = 0; }
 const saveTS = () => LS.set(TS_KEY, TS);
 const tsClean = v => String(v ?? '').replace(/ /g, ' ').trim();
 /* "18184/18329/18400" → ['18184','18329','18400'] (1º valor = 1° corte, depois da / = 2° corte, e assim por diante) */
@@ -801,11 +802,6 @@ const loadXLSX = () => window.XLSX ? Promise.resolve(window.XLSX) : (XLSX_P = XL
   document.head.appendChild(s);
 }));
 
-/* texto de colagem = macro ROMANEAR (C6:C20): 15 linhas */
-function tsPaste(c, corte) {
-  const pre = c ? tsPre(c, corte) : '', cpf = c ? tsCpf(c.cpf) : '', placa = c ? (c.placa || '') : '', lacre = c ? (c.lacre || '') : '';
-  return [pre, cpf, '', '', '', '', placa, '.', '.', lacre || '.', '.', '.', '.', '', cpf];
-}
 const tsKey = (c, n) => c.seq + '|' + TS.src + '|' + n;
 
 async function tsLoad(file) {
@@ -814,20 +810,31 @@ async function tsLoad(file) {
   const sheets = wb.SheetNames.map(n => ({ name: n, rows: X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' }) }));
   const r = tsParse(sheets);
   if (!r) throw new Error('Não encontrei a tabela de cargas. A planilha precisa ter as colunas LOJA, PLACAS, MOTORISTA, PRÉ, LACRE e CPF.');
-  TS = { cargas: r.cargas, sel: 0, corte: 1, feito: {}, fonte: file.name, quando: Date.now(), cortes: r.cortes, fontes: r.fontes, src: r.fontes.find(f => /ROMANEIO/.test(norm(f))) || r.fontes[0] || '', lacreHdr: r.lacre };
+  TS = { v: 2, cargas: r.cargas, sel: 0, corte: 0, feito: {}, fonte: file.name, quando: Date.now(), cortes: r.cortes, fontes: r.fontes, src: r.fontes.find(f => /ROMANEIO/.test(norm(f))) || r.fontes[0] || '', lacreHdr: r.lacre };
   saveTS();
   return r;
 }
 
+/* regra dos cortes: a carga carrega o 1º pré ainda não romaneado; ao copiar, pula para o próximo; sem mais prés = finalizada (✓ verde) */
+const tsNext = c => tsCortes().find(k => tsPre(c, k) && !TS.feito[tsKey(c, k)]) || 0;
+const tsDone = c => { const h = tsCortes().filter(k => tsPre(c, k)); return h.length > 0 && h.every(k => TS.feito[tsKey(c, k)]); };
+const tsCur = c => { if (!c) return 1; if (TS.corte > 0) return TS.corte; const n = tsNext(c); if (n) return n; const h = tsCortes().filter(k => tsPre(c, k)); return h.length ? h[h.length - 1] : 1; };
+/* mesmos dados da aba Romaneio: motorista do cadastro + equipe (Conferente 1 = loja/destino, Conferente 2 = pré, Ajudante 1 = lacre) */
+/* campo do GAN tem 11 posições: "LACR: 41114" cabe; com lacre maior tira o espaço e, se ainda não couber, vai só o número */
+const tsLacre = l => { l = String(l || '').trim(); if (!l) return ''; return ['LACR: ' + l, 'LACR:' + l].find(x => x.length <= 11) || l; };
+const tsR = (c, n) => ({ cpf: c.cpf, placa: String(c.placa || '').toUpperCase(), conf: [c.loja, tsPre(c, n), ''], ajud: [tsLacre(c.lacre), '', ''] });
+const tsDrv = c => Store.get('motoristas', c.cpf) || { cpf: c.cpf, nome: c.nome, rg: '', transp: '', placa: c.placa, _tmp: true };
+
 function viewRomaneioTS(m) {
   const cg = TS.cargas, cur = TS.sel >= 0 ? cg[TS.sel] : null, CT = tsCortes();
-  if (TS.corte > CT.length) TS.corte = 1;
+  if (TS.corte > CT.length) TS.corte = 0;
   const corte = TS.corte, nCol = CT.filter(n => n <= 2 || cg.some(c => tsPre(c, n)));
-  const chips = CT.map(n => { const tot = cg.filter(c => tsPre(c, n)).length, ok = cg.filter(c => tsPre(c, n) && TS.feito[tsKey(c, n)]).length;
+  const comPre = cg.filter(c => CT.some(k => tsPre(c, k))), fin = comPre.filter(tsDone).length;
+  const chips = `<button class="chipbtn ${corte === 0 ? 'on' : ''}" data-ct="0" title="Cada carga vai para o próximo pré ainda não romaneado">Automático · ${fin}/${comPre.length} finalizadas</button>` + CT.map(n => { const tot = cg.filter(c => tsPre(c, n)).length, ok = cg.filter(c => tsPre(c, n) && TS.feito[tsKey(c, n)]).length;
     return `<button class="chipbtn ${n === corte ? 'on' : ''}" data-ct="${n}" title="${tot} carga(s) com pré neste corte">${n}° corte · ${ok}/${tot}</button>`; }).join('');
   m.innerHTML = `
   <h2>Romaneio TS</h2>
-  <p class="sub">Carregue a planilha das cargas do dia, escolha o corte e romaneie cada carga na sequência. O texto copiado segue a macro ROMANEAR da planilha (C6:C20).</p>
+  <p class="sub">Carregue a planilha das cargas do dia e romaneie cada carga na sequência. O texto copiado é o mesmo da aba Romaneio; com mais de um corte, a carga segue do 1° pré para o próximo até finalizar.</p>
   <div class="grid g2">
     <div class="grid">
       <div class="card"><h3>1 · Cargas do dia</h3>
@@ -836,31 +843,37 @@ function viewRomaneioTS(m) {
       </div>
       <div class="card"><h3>2 · Corte e carga</h3>
         ${TS.fontes && TS.fontes.length > 1 ? `<div class="chips" style="margin-bottom:10px"><span class="sub" style="margin:0 4px 0 0;align-self:center">Coluna de pré:</span>${TS.fontes.map((f, i) => `<button class="chipbtn ${f === TS.src ? 'on' : ''}" data-src="${i}">${esc(f)}</button>`).join('')}</div>` : ''}<div class="chips" style="margin-bottom:12px">${chips}</div>
-        <div class="tw" id="tsList" style="max-height:420px"><table class="tstb"><thead><tr><th>SEQ</th><th>LOJA</th><th>PLACA</th><th>MOTORISTA</th>${nCol.map(n => `<th>${n}° CORTE</th>`).join('')}<th>LACRE</th></tr></thead>
-          <tbody>${cg.map((c, i) => `<tr data-i="${i}" style="cursor:pointer" class="${i === TS.sel ? 'tsel' : ''}"><td>${c.seq}</td><td>${esc(c.loja)}</td><td class="mono">${esc(c.placa)}</td><td>${esc(c.nome)}</td>${nCol.map(n => `<td class="mono" style="${n === corte ? 'color:var(--accent);font-weight:700' : ''}">${esc(tsPre(c, n)) || '—'}${TS.feito[tsKey(c, n)] ? ' <span style="color:var(--ok)">✓</span>' : ''}</td>`).join('')}<td class="mono">${esc(c.lacre)}</td></tr>`).join('') || `<tr><td colspan="${5 + nCol.length}" class="empty">Sem cargas.</td></tr>`}</tbody></table></div>
+        <div class="tw" id="tsList" style="max-height:420px"><table class="tstb"><thead><tr><th>SEQ</th><th>LOJA</th><th>PLACA</th><th>MOTORISTA</th>${nCol.map(n => `<th>${n}° CORTE</th>`).join('')}<th>LACRE</th><th></th></tr></thead>
+          <tbody>${cg.map((c, i) => `<tr data-i="${i}" style="cursor:pointer" class="${i === TS.sel ? 'tsel' : ''}"><td>${c.seq}</td><td>${esc(c.loja)}</td><td class="mono">${esc(c.placa)}</td><td>${esc(c.nome)}</td>${nCol.map(n => `<td class="mono" style="${n === tsCur(c) ? 'color:var(--accent);font-weight:700' : ''}">${esc(tsPre(c, n)) || '—'}${TS.feito[tsKey(c, n)] ? ' <span style="color:var(--ok)">✓</span>' : ''}</td>`).join('')}<td class="mono">${esc(c.lacre)}</td><td>${tsDone(c) ? '<span style="color:var(--ok);font-weight:800" title="Finalizada">✓</span>' : ''}</td></tr>`).join('') || `<tr><td colspan="${6 + nCol.length}" class="empty">Sem cargas.</td></tr>`}</tbody></table></div>
         <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="tsPrev" ${cur && TS.sel > 0 ? '' : 'disabled'}>‹ Anterior</button><button class="btn" id="tsNext" ${cur && TS.sel < cg.length - 1 ? '' : 'disabled'}>Próxima ›</button></div>
       </div>
     </div>
     <div class="grid">
       <div class="card"><h3>Carga selecionada</h3><div id="tsInfo"></div></div>
+      <div class="card"><h3>Espelho da tela do GAN</h3><div class="term"><div class="box"><pre id="tsScr"></pre></div></div></div>
       <div class="card"><h3>Texto de colagem <span id="tsCnt" style="text-transform:none;letter-spacing:0"></span></h3>
-        <div class="paste" id="tsPaste"></div>
+        <div class="paste" id="tsPaste"></div><div class="ruler" id="tsRuler"></div>
         <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
-          <button class="btn pri big" id="tsCopy">📋 Copiar</button>
+          <button class="btn pri big" id="tsCopy">📋 Copiar e registrar</button>
           <button class="btn big" id="tsMark">Marcar como romaneada</button></div>
-        <p class="sub" style="margin:10px 0 0;font-size:12px">Cada linha termina com Enter (CRLF), igual ao copiar C6:C20 da planilha. Ao copiar, a carga fica marcada ✓ neste corte.</p>
+        <p class="sub" style="margin:10px 0 0;font-size:12px">Cada linha termina com Enter (CRLF), igual ao Romaneio. Pontos azuis = espaços. Ao copiar, o pré fica marcado ✓ e a carga passa para o próximo corte; sem mais prés, fica finalizada.</p>
       </div>
     </div>
   </div>`;
   const paint = () => {
-    const c = TS.sel >= 0 ? TS.cargas[TS.sel] : null, pre = c ? tsPre(c, TS.corte) : '', fe = c && TS.feito[tsKey(c, TS.corte)];
-    $('#tsInfo').innerHTML = c ? `<div class="kv"><b>Seq / Loja</b><span>${c.seq} · ${esc(c.loja)}</span><b>Motorista</b><span>${esc(c.nome)}</span><b>CPF</b><span class="mono">${tsCpf(c.cpf)} ${cpfOk(c.cpf) ? '' : '<span class="warn">· CPF inválido</span>'}</span><b>Placa</b><span class="mono">${esc(c.placa) || '<span class="warn">sem placa</span>'}</span><b>Lacre</b><span class="mono">${esc(c.lacre) || '<span class="warn">sem lacre</span>'}</span>
-      <b>Pré (${TS.corte}° corte)</b><span class="mono">${esc(pre) || '<span class="warn">sem pré neste corte</span>'}</span><b>Pré por corte</b><span class="mono">${tsCortes().map(n => `${n}°: ${esc(tsPre(c, n)) || '—'}`).join(' &nbsp; ')}</span></div>${fe ? `<p class="sub" style="margin:10px 0 0;color:var(--ok)">✓ Romaneada neste corte em ${new Date(fe).toLocaleTimeString('pt-BR')}</p>` : ''}` : '<p class="sub">Nenhuma carga selecionada.</p>';
-    const lines = tsPaste(c, TS.corte);
-    $('#tsPaste').innerHTML = lines.map((l, i) => `<div class="ln"><span class="n">${i + 1}</span><span class="t">${l ? esc(l) : '<i>(vazia)</i>'}</span></div>`).join('');
+    const c = TS.sel >= 0 ? TS.cargas[TS.sel] : null, n = tsCur(c), pre = c ? tsPre(c, n) : '', fe = c && TS.feito[tsKey(c, n)], dn = c && tsDone(c);
+    const drv = c ? tsDrv(c) : null, R2 = c ? tsR(c, n) : { cpf: '', placa: '', conf: ['', '', ''], ajud: ['', '', ''] };
+    const pend = c ? tsCortes().filter(k => tsPre(c, k) && !TS.feito[tsKey(c, k)]) : [];
+    $('#tsInfo').innerHTML = c ? `<div class="kv"><b>Seq / Loja</b><span>${c.seq} · ${esc(c.loja)}</span><b>Motorista</b><span>${esc(c.nome)}</span><b>CPF</b><span class="mono">${tsCpf(c.cpf)} ${cpfOk(c.cpf) ? '' : '<span class="warn">· CPF inválido</span>'}</span><b>RG</b><span>${esc(drv.rg) || '—'}</span><b>Transportadora</b><span>${esc(drv.transp)} ${esc(transpName(drv.transp))} ${drv._tmp ? '<span class="warn">· motorista não cadastrado (cadastre na aba Cadastro)</span>' : (transpName(drv.transp) ? '' : '<span class="warn">· código sem transportadora</span>')}</span><b>Placa</b><span class="mono">${esc(c.placa) || '<span class="warn">sem placa</span>'}</span><b>Lacre</b><span class="mono">${esc(c.lacre) || '<span class="warn">sem lacre</span>'}</span>
+      <b>Pré atual</b><span class="mono">${esc(pre) ? `${esc(pre)} <small>(${n}° corte)</small>` : '<span class="warn">sem pré</span>'}</span><b>Pré por corte</b><span class="mono">${tsCortes().map(k => `${k}°: ${esc(tsPre(c, k)) || '—'}${TS.feito[tsKey(c, k)] ? ' ✓' : ''}`).join(' &nbsp; ')}</span></div>${dn ? '<p class="sub" style="margin:10px 0 0;color:var(--ok);font-weight:700">✓ Finalizada — todos os prés desta carga foram romaneados</p>' : (pend.length > 1 ? `<p class="sub" style="margin:10px 0 0">Depois deste: ${pend.slice(1).map(k => k + '° corte (' + esc(tsPre(c, k)) + ')').join(', ')}</p>` : '')}` : '<p class="sub">Nenhuma carga selecionada.</p>';
+    $('#tsScr').textContent = screenText(R2, drv).join('\n');
+    const lines = c ? buildPaste(R2, drv) : [];
+    $('#tsPaste').innerHTML = lines.map((l, i) => `<div class="ln"><span class="n">${i + 1}</span><span class="t">${l ? esc(l).replace(/^( +)/, x => '<i>' + '·'.repeat(x.length) + '</i>') : '<i>(vazia)</i>'}</span><span class="l">${l.length}</span></div>`).join('');
     $('#tsCnt').textContent = `· ${lines.length} linhas · ${pasteText(lines).length} caracteres`;
-    $('#tsCopy').disabled = !c || !pre;
-    $('#tsMark').disabled = !c; $('#tsMark').textContent = fe ? 'Desmarcar romaneada' : 'Marcar como romaneada';
+    const mx = Math.max(...lines.map(l => l.length), 10);
+    $('#tsRuler').textContent = Array.from({ length: Math.ceil(mx / 10) }, (_, i) => String((i + 1) * 10).padStart(10, ' ')).join('');
+    $('#tsCopy').disabled = !c || !pre; $('#tsCopy').textContent = dn ? '📋 Copiar novamente' : '📋 Copiar e registrar';
+    $('#tsMark').disabled = !c || !pre; $('#tsMark').textContent = fe ? 'Desmarcar romaneada' : 'Marcar como romaneada';
     m.querySelectorAll('#tsList tbody tr[data-i]').forEach(tr => tr.classList.toggle('tsel', +tr.dataset.i === TS.sel));
     $('#tsPrev').disabled = !c || TS.sel <= 0; $('#tsNext').disabled = !c || TS.sel >= TS.cargas.length - 1;
   };
@@ -876,13 +889,16 @@ function viewRomaneioTS(m) {
     try { const r = await tsLoad(f); toast(`${r.cargas.length} carga(s) carregadas`); render(); }
     catch (err) { $('#tsMsg').innerHTML = `<span class="bad">${esc(err.message || err)}</span>`; e.target.value = ''; }
   };
-  $('#tsClr').onclick = () => { if (!confirm('Limpar as cargas carregadas?')) return; TS = { cargas: [], sel: -1, corte: 1, feito: {}, fonte: '', quando: 0, fontes: [], src: '', lacreHdr: '' }; saveTS(); render(); };
-  $('#tsMark').onclick = () => { const c = TS.cargas[TS.sel]; if (!c) return; const k = tsKey(c, TS.corte); if (TS.feito[k]) delete TS.feito[k]; else TS.feito[k] = Date.now(); saveTS(); keepScroll(); };
+  $('#tsClr').onclick = () => { if (!confirm('Limpar as cargas carregadas?')) return; TS = { v: 2, cargas: [], sel: -1, corte: 0, feito: {}, fonte: '', quando: 0, fontes: [], src: '', lacreHdr: '' }; saveTS(); render(); };
+  $('#tsMark').onclick = () => { const c = TS.cargas[TS.sel]; if (!c) return; const k = tsKey(c, tsCur(c)); if (TS.feito[k]) delete TS.feito[k]; else TS.feito[k] = Date.now(); saveTS(); keepScroll(); };
   $('#tsCopy').onclick = async () => {
-    const c = TS.cargas[TS.sel]; if (!c || !tsPre(c, TS.corte)) return;
-    const txt = pasteText(tsPaste(c, TS.corte));
+    const c = TS.cargas[TS.sel]; if (!c) return;
+    const n = tsCur(c); if (!tsPre(c, n)) return;
+    const d = tsDrv(c), R2 = tsR(c, n), k = tsKey(c, n), txt = pasteText(buildPaste(R2, d));
     try { await navigator.clipboard.writeText(txt); } catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
-    TS.feito[tsKey(c, TS.corte)] = Date.now(); saveTS(); toast('Copiado! Cole no sistema (Ctrl+V).'); keepScroll();
+    TS.feito[k] = Date.now(); saveTS();
+    try { await Store.add('historico', { cpf: d.cpf, nome: d.nome, transp: d.transp || '', transpNome: transpName(d.transp), placa: R2.placa, conf: R2.conf.filter(Boolean), ajud: R2.ajud.filter(Boolean), usuario: Store.user || 'anon' }); } catch (e) { console.warn(e); }
+    toast('Copiado! Cole no sistema (Ctrl+V).'); keepScroll();
   };
 }
 
