@@ -836,11 +836,28 @@ function viewCadastro(m) {
   $('#eAdd').onclick = addE; $('#eN').onkeydown = e => { if (e.key === 'Enter') addE(); };
 }
 
+/* separa os campos digitados na Equipe (só para exibição no Histórico): destino, pré, placa, lacre */
+function splitEquipe(r) {
+  const q = { destino: [], pre: [], placa2: [], lacre: [], equipe: [] };
+  const nomes = new Set(Store.list('pessoal').map(p => String(p.nome || '').trim().toUpperCase()));
+  [...(r.conf || []), ...(r.ajud || [])].forEach(raw => {
+    const t = String(raw ?? '').trim(); if (!t || /^[.\-–—]+$/.test(t)) return;
+    let m;
+    if ((m = t.match(/^LACR[\s:.\-]*(.*)$/i))) { const v = m[1].trim(); if (v) q.lacre.push(v); return; }
+    if ((m = t.match(/^PR[ÉE]?[\s:.\-]*(\d+)$/i))) { q.pre.push(m[1]); return; }
+    if (/^[A-Z]{3}-?\d[A-Z0-9]\d{2}$/i.test(t)) { q.placa2.push(t.toUpperCase()); return; }
+    if (/^\d{1,5}$/.test(t)) { q.pre.push(t); return; }
+    if (/^\d{6,}$/.test(t)) { q.lacre.push(t); return; }
+    if (nomes.has(t.toUpperCase())) { q.equipe.push(t); return; }
+    q.destino.push(t);
+  });
+  return q;
+}
 /* ---------- HISTÓRICO ---------- */
 function viewHist(m) {
   const rows = Store.list('historico').sort((a, b) => tms(b.ts) - tms(a.ts)).slice(0, 150);
   const adm = isAdm();
-  m.innerHTML = `<h2>Histórico de romaneios copiados</h2><p class="sub">Últimos 150 registros de todos os usuários.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}</p><div class="tw"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Motorista</th><th>Transportadora</th><th>Placa</th><th>Equipe</th>${adm ? '<th></th>' : ''}</tr></thead><tbody>${rows.map(r => `<tr data-id="${esc(r.id)}" style="cursor:default"><td>${new Date(tms(r.ts)).toLocaleString('pt-BR')}${r.updatedBy ? `<br><small class="warn" title="Editado por ${esc(r.updatedBy)}">✎ editado</small>` : ''}</td><td>${esc(r.usuario)}</td><td>${esc(r.nome)}<br><small class="mono">${fmtCpf(r.cpf)}</small></td><td>${esc(r.transpNome || r.transp)}</td><td class="mono">${esc(r.placa)}</td><td>${esc([...(r.conf || []), ...(r.ajud || [])].join(', '))}</td>${adm ? '<td style="white-space:nowrap"><button class="btn sm" data-ed title="Editar">✎</button> <button class="btn sm danger" data-rm title="Excluir">✕</button></td>' : ''}</tr>`).join('') || `<tr><td colspan="${adm ? 7 : 6}" class="empty">Sem registros.</td></tr>`}</tbody></table></div>`;
+  m.innerHTML = `<h2>Histórico de romaneios copiados</h2><p class="sub">Últimos 150 registros de todos os usuários.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}</p><div class="tw"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Motorista</th><th>Transportadora</th><th>Placa</th><th>Destino</th><th>Pré</th><th>Placa 2</th><th>Lacre</th><th>Equipe</th>${adm ? '<th></th>' : ''}</tr></thead><tbody>${rows.map(r => `<tr data-id="${esc(r.id)}" style="cursor:default"><td>${new Date(tms(r.ts)).toLocaleString('pt-BR')}${r.updatedBy ? `<br><small class="warn" title="Editado por ${esc(r.updatedBy)}">✎ editado</small>` : ''}</td><td>${esc(r.usuario)}</td><td>${esc(r.nome)}<br><small class="mono">${fmtCpf(r.cpf)}</small></td><td>${esc(r.transpNome || r.transp)}</td><td class="mono">${esc(r.placa)}</td>${(q => `<td>${esc(q.destino.join(', '))}</td><td class="mono">${esc(q.pre.join(', '))}</td><td class="mono">${esc(q.placa2.join(', '))}</td><td class="mono">${esc(q.lacre.join(', '))}</td><td>${esc(q.equipe.join(', '))}</td>`)(splitEquipe(r))}${adm ? '<td style="white-space:nowrap"><button class="btn sm" data-ed title="Editar">✎</button> <button class="btn sm danger" data-rm title="Excluir">✕</button></td>' : ''}</tr>`).join('') || `<tr><td colspan="${adm ? 7 : 6}" class="empty">Sem registros.</td></tr>`}</tbody></table></div>`;
   if (adm) m.querySelectorAll('tbody tr[data-id]').forEach(tr => {
     const id = tr.dataset.id;
     tr.querySelector('[data-ed]').onclick = () => editHist(id);
