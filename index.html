@@ -97,6 +97,8 @@ table.sheet{table-layout:fixed}
 .sheet td.tn{padding:9px 10px;font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sheet tr.newrow td{background:var(--surface2);border-bottom:2px solid var(--accent)}
 .sheet tr.flash td{background:#f5b53d33;transition:background 1s}
+.tstb td,.tstb th{white-space:nowrap;font-size:12.5px;padding:7px 9px}.tstb td:nth-child(4){white-space:normal;min-width:150px}
+.tstb tr.tsel td{background:var(--surface2);box-shadow:inset 0 -2px 0 var(--accent)}
 .addbar{display:flex;gap:8px;margin-bottom:10px}.addbar .in{flex:1}.addbar .btn{white-space:nowrap}
 /* ===== banner animado ===== */
 .banner{flex:0 0 auto;background:#020f2b;border-bottom:1px solid var(--border);line-height:0;overflow:hidden}
@@ -524,8 +526,8 @@ function screenText(R, drv) {
 /* =====================================================================
    INTERFACE
    ===================================================================== */
-const TABS = [['romaneio', 'Romaneio'], ['cadastro', 'Cadastro'], ['historico', 'Histórico'], ['indicadores', 'Indicadores'], ['config', 'Configurações']];
-let tab = LS.get('rom_tab', 'romaneio'); if (!['romaneio', 'cadastro', 'historico', 'indicadores', 'config'].includes(tab)) tab = 'romaneio';
+const TABS = [['romaneio', 'Romaneio'], ['romaneio_ts', 'Romaneio TS'], ['cadastro', 'Cadastro'], ['historico', 'Histórico'], ['indicadores', 'Indicadores'], ['config', 'Configurações']];
+let tab = LS.get('rom_tab', 'romaneio'); if (!['romaneio', 'romaneio_ts', 'cadastro', 'historico', 'indicadores', 'config'].includes(tab)) tab = 'romaneio';
 let R = LS.get('rom_draft_' + (Store.user || ''), null) || { cpf: '', placa: '', conf: ['', '', ''], ajud: ['', '', ''] };
 const saveDraft = () => LS.set('rom_draft_' + (Store.user || ''), R);   // rascunho é POR USUÁRIO/NAVEGADOR
 let mq = '', mf = '', mpage = 0;
@@ -536,9 +538,9 @@ let INDV = null, ACCV = null, PRESV = null;
    Guardado em config/acesso_<login>. Enquanto NÃO existir nenhum administrador, todos têm acesso total
    (assim ninguém fica trancado para fora). Depois do primeiro administrador, quem não estiver
    listado como administrador vê só as abas liberadas (padrão: Romaneio e Cadastro). */
-const ACC_TABS = [['romaneio', 'Romaneio'], ['cadastro', 'Cadastro'], ['historico', 'Histórico'], ['indicadores', 'Indicadores']];
+const ACC_TABS = [['romaneio', 'Romaneio'], ['romaneio_ts', 'Romaneio TS'], ['cadastro', 'Cadastro'], ['historico', 'Histórico'], ['indicadores', 'Indicadores']];
 const ACC_DEFAULT = ['romaneio', 'cadastro'];
-const ALL_TABS = ['romaneio', 'cadastro', 'historico', 'indicadores', 'config'];
+const ALL_TABS = ['romaneio', 'romaneio_ts', 'cadastro', 'historico', 'indicadores', 'config'];
 const acKey = s => String(s || '').trim().toLowerCase().replace(/@romaneio\.app$/, '').replace(/[^a-z0-9@._-]+/g, '_');
 const myKey = () => acKey(Auth.user ? Auth.user.email : Store.user);
 const acList = () => Store.list('config').filter(c => String(c.id).startsWith('acesso_'));
@@ -630,7 +632,7 @@ function render() {
   if (!access().ready) { m.innerHTML = '<div class="empty">Carregando permissões…</div>'; return; }
   if (!canTab(tab)) { tab = firstTab(); LS.set('rom_tab', tab); renderNav(); }
   if (tab !== 'cadastro') CAD = null; if (tab !== 'indicadores') INDV = null; if (tab !== 'config') { ACCV = null; PRESV = null; }
-  ({ romaneio: viewRomaneio, cadastro: viewCadastro, historico: viewHist, indicadores: viewInd, config: viewConfig }[tab])(m);
+  ({ romaneio: viewRomaneio, romaneio_ts: viewRomaneioTS, cadastro: viewCadastro, historico: viewHist, indicadores: viewInd, config: viewConfig }[tab])(m);
 }
 
 /* ---------- ROMANEIO ---------- */
@@ -714,6 +716,159 @@ function viewRomaneio(m) {
     try { await navigator.clipboard.writeText(txt); } catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
     await Store.add('historico', { cpf: d.cpf, nome: d.nome, transp: d.transp, transpNome: transpName(d.transp), placa: R.placa, conf: R.conf.filter(Boolean), ajud: R.ajud.filter(Boolean), usuario: Store.user || 'anon' });
     toast('Copiado! Cole no sistema (Ctrl+V).');
+  };
+}
+
+/* ---------- ROMANEIO TS (cargas do dia por upload de planilha) ----------
+   Réplica da planilha ROMANEIO_TS: a macro ROMANEAR copia C6:C20 =
+   PRÉ · CPF · 4 linhas vazias · PLACA · . · . · LACRE · . · . · . · (vazia) · CPF */
+const TS_KEY = 'rom_ts', TS_CORTES = [1, 2, 3, 4];
+let TS = LS.get(TS_KEY, null) || { cargas: [], sel: -1, corte: 1, feito: {}, fonte: '', quando: 0 };
+const saveTS = () => LS.set(TS_KEY, TS);
+const tsClean = v => String(v ?? '').replace(/ /g, ' ').trim();
+const tsCpf = c => { const d = digits(c); return d.length === 11 ? fmtCpf(d) : (c || ''); };
+
+/* lê as abas (matriz de linhas) e devolve as cargas com os pré de cada corte */
+function tsParse(sheets) {
+  const N = v => norm(tsClean(v));
+  let cargas = null;
+  for (const sh of sheets) {
+    for (let r = 0; r < Math.min(sh.rows.length, 40) && !cargas; r++) {
+      const h = (sh.rows[r] || []).map(N), ix = f => h.findIndex(f);
+      const c = { seq: ix(x => /^SEQ/.test(x)), loja: ix(x => x === 'LOJA'), placa: ix(x => /^PLACA/.test(x)), nome: ix(x => x === 'MOTORISTA' || x === 'NOME'), pre: ix(x => x === 'PRE'), lacre: ix(x => x === 'LACRE'), cpf: ix(x => x === 'CPF') };
+      if (c.loja < 0 || c.placa < 0 || c.nome < 0 || c.cpf < 0) continue;
+      cargas = [];
+      for (let i = r + 1; i < sh.rows.length; i++) {
+        const w = sh.rows[i] || [];
+        const loja = tsClean(w[c.loja]), placa = tsClean(w[c.placa]).toUpperCase(), nome = tsClean(w[c.nome]).toUpperCase(), d = digits(w[c.cpf]);
+        if (!loja && !placa && !nome && !d) continue;
+        const sq = c.seq >= 0 ? Number(w[c.seq]) : NaN;
+        cargas.push({ seq: Number.isFinite(sq) && sq > 0 ? sq : cargas.length + 1, loja, placa, nome, cpf: d ? d.padStart(11, '0') : '', lacre: c.lacre >= 0 ? tsClean(w[c.lacre]) : '', preBase: c.pre >= 0 ? tsClean(w[c.pre]) : '' });
+      }
+    }
+    if (cargas) break;
+  }
+  if (!cargas || !cargas.length) return null;
+  /* tabela de cortes: colunas "PRÉ 1° CORTE", "PRÉ 2° CORTE"… (colunas sem título logo à direita contam como o corte seguinte) */
+  const rc = [];
+  outer: for (const sh of sheets) {
+    for (let r = 0; r < Math.min(sh.rows.length, 40); r++) {
+      const h = (sh.rows[r] || []).map(N), cc = {};
+      h.forEach((x, i) => { const m = x.match(/(\d)\s*[°ºO]?\s*CORTE/); if (m && +m[1] >= 1 && +m[1] <= 4) cc[+m[1]] = i; });
+      const ks = Object.keys(cc).map(Number); if (!ks.length) continue;
+      const first = Math.min(...ks.map(k => cc[k])), has = col => sh.rows.slice(r + 1).some(w => tsClean((w || [])[col]) !== '');
+      let n = Math.max(...ks), col = Math.max(...ks.map(k => cc[k])) + 1;
+      while (n < 4 && !h[col] && has(col)) { cc[++n] = col; col++; }
+      let lc = -1; h.forEach((x, i) => { if (x === 'LOJA' && i < first) lc = i; }); if (lc < 0) continue;
+      let sc = -1; h.forEach((x, i) => { if (/^SEQ/.test(x) && i < lc) sc = i; });
+      for (let i = r + 1; i < sh.rows.length; i++) {
+        const w = sh.rows[i] || [], loja = tsClean(w[lc]); if (!loja) continue;
+        const pre = {}; Object.keys(cc).forEach(k => { const v = tsClean(w[cc[k]]); if (v) pre[k] = v; });
+        rc.push({ seq: sc >= 0 ? Number(w[sc]) : NaN, loja, pre });
+      }
+      break outer;
+    }
+  }
+  const used = new Set();
+  cargas.forEach(c => {
+    const k = N(c.loja);
+    let m = rc.findIndex((x, i) => !used.has(i) && x.seq === c.seq && N(x.loja) === k);
+    if (m < 0) m = rc.findIndex((x, i) => !used.has(i) && N(x.loja) === k);
+    if (m >= 0) used.add(m);
+    const pre = { ...(m >= 0 ? rc[m].pre : {}) };
+    if (c.preBase) pre[1] = c.preBase;
+    c.pre = { 1: pre[1] || '', 2: pre[2] || '', 3: pre[3] || '', 4: pre[4] || '' }; delete c.preBase;
+  });
+  return { cargas, cortes: rc.length > 0 };
+}
+
+let XLSX_P = null;
+const loadXLSX = () => window.XLSX ? Promise.resolve(window.XLSX) : (XLSX_P = XLSX_P || new Promise((ok, bad) => {
+  const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload = () => ok(window.XLSX); s.onerror = () => { XLSX_P = null; bad(new Error('Não foi possível carregar o leitor de planilhas (verifique a internet).')); };
+  document.head.appendChild(s);
+}));
+
+/* texto de colagem = macro ROMANEAR (C6:C20): 15 linhas */
+function tsPaste(c, corte) {
+  const pre = c ? (c.pre[corte] || '') : '', cpf = c ? tsCpf(c.cpf) : '', placa = c ? (c.placa || '') : '', lacre = c ? (c.lacre || '') : '';
+  return [pre, cpf, '', '', '', '', placa, '.', '.', lacre || '.', '.', '.', '.', '', cpf];
+}
+const tsKey = (c, n) => c.seq + '-' + n;
+
+async function tsLoad(file) {
+  const X = await loadXLSX();
+  const wb = X.read(await file.arrayBuffer(), { type: 'array' });
+  const sheets = wb.SheetNames.map(n => ({ name: n, rows: X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' }) }));
+  const r = tsParse(sheets);
+  if (!r) throw new Error('Não encontrei a tabela de cargas. A planilha precisa ter as colunas LOJA, PLACAS, MOTORISTA, PRÉ, LACRE e CPF.');
+  TS = { cargas: r.cargas, sel: 0, corte: 1, feito: {}, fonte: file.name, quando: Date.now(), cortes: r.cortes };
+  saveTS();
+  return r;
+}
+
+function viewRomaneioTS(m) {
+  const cg = TS.cargas, corte = TS.corte, cur = TS.sel >= 0 ? cg[TS.sel] : null;
+  const nCol = TS_CORTES.filter(n => n <= 2 || cg.some(c => c.pre[n]));
+  const chips = TS_CORTES.map(n => { const tot = cg.filter(c => c.pre[n]).length, ok = cg.filter(c => c.pre[n] && TS.feito[tsKey(c, n)]).length;
+    return `<button class="chipbtn ${n === corte ? 'on' : ''}" data-ct="${n}" title="${tot} carga(s) com pré neste corte">${n}° corte · ${ok}/${tot}</button>`; }).join('');
+  m.innerHTML = `
+  <h2>Romaneio TS</h2>
+  <p class="sub">Carregue a planilha das cargas do dia, escolha o corte e romaneie cada carga na sequência. O texto copiado segue a macro ROMANEAR da planilha (C6:C20).</p>
+  <div class="grid g2">
+    <div class="grid">
+      <div class="card"><h3>1 · Cargas do dia</h3>
+        <div class="tools" style="margin:0"><input class="in" type="file" id="tsF" accept=".xlsx,.xlsm,.xls,.csv"><button class="btn" id="tsClr" ${cg.length ? '' : 'disabled'}>Limpar</button></div>
+        <p class="sub" id="tsMsg" style="margin:10px 0 0">${cg.length ? `${esc(TS.fonte)} · ${cg.length} carga(s) · carregado em ${new Date(TS.quando).toLocaleString('pt-BR')}${TS.cortes === false ? ' · <span class="warn">sem tabela de cortes (só o pré da oficialização)</span>' : ''}` : 'Nenhuma planilha carregada. Envie o arquivo com as abas OFICIALIZAÇÃO e a tabela de pré por corte.'}</p>
+      </div>
+      <div class="card"><h3>2 · Corte e carga</h3>
+        <div class="chips" style="margin-bottom:12px">${chips}</div>
+        <div class="tw" id="tsList" style="max-height:420px"><table class="tstb"><thead><tr><th>SEQ</th><th>LOJA</th><th>PLACA</th><th>MOTORISTA</th>${nCol.map(n => `<th>${n}° CORTE</th>`).join('')}<th>LACRE</th></tr></thead>
+          <tbody>${cg.map((c, i) => `<tr data-i="${i}" style="cursor:pointer" class="${i === TS.sel ? 'tsel' : ''}"><td>${c.seq}</td><td>${esc(c.loja)}</td><td class="mono">${esc(c.placa)}</td><td>${esc(c.nome)}</td>${nCol.map(n => `<td class="mono" style="${n === corte ? 'color:var(--accent);font-weight:700' : ''}">${esc(c.pre[n]) || '—'}${TS.feito[tsKey(c, n)] ? ' <span style="color:var(--ok)">✓</span>' : ''}</td>`).join('')}<td class="mono">${esc(c.lacre)}</td></tr>`).join('') || `<tr><td colspan="${5 + nCol.length}" class="empty">Sem cargas.</td></tr>`}</tbody></table></div>
+        <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" id="tsPrev" ${cur && TS.sel > 0 ? '' : 'disabled'}>‹ Anterior</button><button class="btn" id="tsNext" ${cur && TS.sel < cg.length - 1 ? '' : 'disabled'}>Próxima ›</button></div>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Carga selecionada</h3><div id="tsInfo"></div></div>
+      <div class="card"><h3>Texto de colagem <span id="tsCnt" style="text-transform:none;letter-spacing:0"></span></h3>
+        <div class="paste" id="tsPaste"></div>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap">
+          <button class="btn pri big" id="tsCopy">📋 Copiar</button>
+          <button class="btn big" id="tsMark">Marcar como romaneada</button></div>
+        <p class="sub" style="margin:10px 0 0;font-size:12px">Cada linha termina com Enter (CRLF), igual ao copiar C6:C20 da planilha. Ao copiar, a carga fica marcada ✓ neste corte.</p>
+      </div>
+    </div>
+  </div>`;
+  const paint = () => {
+    const c = TS.sel >= 0 ? TS.cargas[TS.sel] : null, pre = c ? c.pre[TS.corte] : '', fe = c && TS.feito[tsKey(c, TS.corte)];
+    $('#tsInfo').innerHTML = c ? `<div class="kv"><b>Seq / Loja</b><span>${c.seq} · ${esc(c.loja)}</span><b>Motorista</b><span>${esc(c.nome)}</span><b>CPF</b><span class="mono">${tsCpf(c.cpf)} ${cpfOk(c.cpf) ? '' : '<span class="warn">· CPF inválido</span>'}</span><b>Placa</b><span class="mono">${esc(c.placa) || '<span class="warn">sem placa</span>'}</span><b>Lacre</b><span class="mono">${esc(c.lacre) || '<span class="warn">sem lacre</span>'}</span>
+      <b>Pré (${TS.corte}° corte)</b><span class="mono">${esc(pre) || '<span class="warn">sem pré neste corte</span>'}</span><b>Pré por corte</b><span class="mono">${TS_CORTES.map(n => `${n}°: ${esc(c.pre[n]) || '—'}`).join(' &nbsp; ')}</span></div>${fe ? `<p class="sub" style="margin:10px 0 0;color:var(--ok)">✓ Romaneada neste corte em ${new Date(fe).toLocaleTimeString('pt-BR')}</p>` : ''}` : '<p class="sub">Nenhuma carga selecionada.</p>';
+    const lines = tsPaste(c, TS.corte);
+    $('#tsPaste').innerHTML = lines.map((l, i) => `<div class="ln"><span class="n">${i + 1}</span><span class="t">${l ? esc(l) : '<i>(vazia)</i>'}</span></div>`).join('');
+    $('#tsCnt').textContent = `· ${lines.length} linhas · ${pasteText(lines).length} caracteres`;
+    $('#tsCopy').disabled = !c || !pre;
+    $('#tsMark').disabled = !c; $('#tsMark').textContent = fe ? 'Desmarcar romaneada' : 'Marcar como romaneada';
+    m.querySelectorAll('#tsList tbody tr[data-i]').forEach(tr => tr.classList.toggle('tsel', +tr.dataset.i === TS.sel));
+    $('#tsPrev').disabled = !c || TS.sel <= 0; $('#tsNext').disabled = !c || TS.sel >= TS.cargas.length - 1;
+  };
+  paint();
+  const keepScroll = () => { const y = $('#tsList')?.scrollTop || 0; render(); const l = $('#tsList'); if (l) l.scrollTop = y; };
+  m.querySelectorAll('[data-ct]').forEach(b => b.onclick = () => { TS.corte = +b.dataset.ct; saveTS(); keepScroll(); });
+  m.querySelectorAll('#tsList tbody tr[data-i]').forEach(tr => tr.onclick = () => { TS.sel = +tr.dataset.i; saveTS(); paint(); });
+  $('#tsPrev').onclick = () => { TS.sel--; saveTS(); paint(); }; $('#tsNext').onclick = () => { TS.sel++; saveTS(); paint(); };
+  $('#tsF').onchange = async e => {
+    const f = e.target.files[0]; if (!f) return;
+    $('#tsMsg').textContent = 'Lendo planilha…';
+    try { const r = await tsLoad(f); toast(`${r.cargas.length} carga(s) carregadas`); render(); }
+    catch (err) { $('#tsMsg').innerHTML = `<span class="bad">${esc(err.message || err)}</span>`; e.target.value = ''; }
+  };
+  $('#tsClr').onclick = () => { if (!confirm('Limpar as cargas carregadas?')) return; TS = { cargas: [], sel: -1, corte: 1, feito: {}, fonte: '', quando: 0 }; saveTS(); render(); };
+  $('#tsMark').onclick = () => { const c = TS.cargas[TS.sel]; if (!c) return; const k = tsKey(c, TS.corte); if (TS.feito[k]) delete TS.feito[k]; else TS.feito[k] = Date.now(); saveTS(); keepScroll(); };
+  $('#tsCopy').onclick = async () => {
+    const c = TS.cargas[TS.sel]; if (!c || !c.pre[TS.corte]) return;
+    const txt = pasteText(tsPaste(c, TS.corte));
+    try { await navigator.clipboard.writeText(txt); } catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    TS.feito[tsKey(c, TS.corte)] = Date.now(); saveTS(); toast('Copiado! Cole no sistema (Ctrl+V).'); keepScroll();
   };
 }
 
@@ -857,7 +1012,10 @@ function splitEquipe(r) {
 function viewHist(m) {
   const rows = Store.list('historico').sort((a, b) => tms(b.ts) - tms(a.ts)).slice(0, 150);
   const adm = isAdm();
-  m.innerHTML = `<h2>Histórico de romaneios copiados</h2><p class="sub">Últimos 150 registros de todos os usuários.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}</p><div class="tw"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Motorista</th><th>Transportadora</th><th>Placa</th><th>Destino</th><th>Pré</th><th>Placa 2</th><th>Lacre</th><th>Equipe</th>${adm ? '<th></th>' : ''}</tr></thead><tbody>${rows.map(r => `<tr data-id="${esc(r.id)}" style="cursor:default"><td>${new Date(tms(r.ts)).toLocaleString('pt-BR')}${r.updatedBy ? `<br><small class="warn" title="Editado por ${esc(r.updatedBy)}">✎ editado</small>` : ''}</td><td>${esc(r.usuario)}</td><td>${esc(r.nome)}<br><small class="mono">${fmtCpf(r.cpf)}</small></td><td>${esc(r.transpNome || r.transp)}</td><td class="mono">${esc(r.placa)}</td>${(q => `<td>${esc(q.destino.join(', '))}</td><td class="mono">${esc(q.pre.join(', '))}</td><td class="mono">${esc(q.placa2.join(', '))}</td><td class="mono">${esc(q.lacre.join(', '))}</td><td>${esc(q.equipe.join(', '))}</td>`)(splitEquipe(r))}${adm ? '<td style="white-space:nowrap"><button class="btn sm" data-ed title="Editar">✎</button> <button class="btn sm danger" data-rm title="Excluir">✕</button></td>' : ''}</tr>`).join('') || `<tr><td colspan="${adm ? 7 : 6}" class="empty">Sem registros.</td></tr>`}</tbody></table></div>`;
+  m.innerHTML = `<h2>Histórico de romaneios copiados</h2><p class="sub">Últimos 150 registros de todos os usuários.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}</p><div class="tw" id="histTw"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Motorista</th><th>Transportadora</th><th>Placa</th><th>Destino</th><th>Pré</th><th>Placa 2</th><th>Lacre</th><th>Equipe</th>${adm ? '<th></th>' : ''}</tr></thead><tbody>${rows.map(r => `<tr data-id="${esc(r.id)}" style="cursor:default"><td>${new Date(tms(r.ts)).toLocaleString('pt-BR')}${r.updatedBy ? `<br><small class="warn" title="Editado por ${esc(r.updatedBy)}">✎ editado</small>` : ''}</td><td>${esc(r.usuario)}</td><td>${esc(r.nome)}<br><small class="mono">${fmtCpf(r.cpf)}</small></td><td>${esc(r.transpNome || r.transp)}</td><td class="mono">${esc(r.placa)}</td>${(q => `<td>${esc(q.destino.join(', '))}</td><td class="mono">${esc(q.pre.join(', '))}</td><td class="mono">${esc(q.placa2.join(', '))}</td><td class="mono">${esc(q.lacre.join(', '))}</td><td>${esc(q.equipe.join(', '))}</td>`)(splitEquipe(r))}${adm ? '<td style="white-space:nowrap"><button class="btn sm" data-ed title="Editar">✎</button> <button class="btn sm danger" data-rm title="Excluir">✕</button></td>' : ''}</tr>`).join('') || `<tr><td colspan="${adm ? 7 : 6}" class="empty">Sem registros.</td></tr>`}</tbody></table></div>`;
+  /* a tabela ocupa toda a altura disponível até o rodapé (sem sobra vazia nem corte) */
+  const fitHist = () => { const t = document.getElementById('histTw'); if (!t) return window.removeEventListener('resize', fitHist); t.style.maxHeight = Math.max(200, Math.floor(m.getBoundingClientRect().bottom - t.getBoundingClientRect().top - 18)) + 'px'; };
+  fitHist(); window.addEventListener('resize', fitHist);
   if (adm) m.querySelectorAll('tbody tr[data-id]').forEach(tr => {
     const id = tr.dataset.id;
     tr.querySelector('[data-ed]').onclick = () => editHist(id);
