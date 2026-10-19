@@ -897,7 +897,7 @@ function viewRomaneioTS(m) {
     const d = tsDrv(c), R2 = tsR(c, n), k = tsKey(c, n), txt = pasteText(buildPaste(R2, d));
     try { await navigator.clipboard.writeText(txt); } catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
     TS.feito[k] = Date.now(); saveTS();
-    try { await Store.add('historico', { cpf: d.cpf, nome: d.nome, transp: d.transp || '', transpNome: transpName(d.transp), placa: R2.placa, conf: R2.conf.filter(Boolean), ajud: R2.ajud.filter(Boolean), usuario: Store.user || 'anon' }); } catch (e) { console.warn(e); }
+    try { await Store.add('historico', { cpf: d.cpf, nome: d.nome, transp: d.transp || '', transpNome: transpName(d.transp), placa: R2.placa, conf: R2.conf.filter(Boolean), ajud: R2.ajud.filter(Boolean), usuario: Store.user || 'anon', op: 'ts', loja: c.loja || '', pre: tsPre(c, n) || '', lacre: c.lacre || '' }); } catch (e) { console.warn(e); }
     toast('Copiado! Cole no sistema (Ctrl+V).'); keepScroll();
   };
 }
@@ -1124,7 +1124,7 @@ const fdia = d => d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digi
 const nf = (n, d = 0) => (n || 0).toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
 const hh = h => h == null ? '—' : String(h).padStart(2, '0') + 'h';
 const WDN = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-let IND = Object.assign({ per: '7d', turno: '', user: '', de: '', ate: '' }, LS.get('rom_ind', {}));
+let IND = Object.assign({ op: 'romaneio', per: '7d', turno: '', user: '', de: '', ate: '' }, LS.get('rom_ind', {}));
 
 function indWindow() {
   const hoje = turnoOf(new Date()).dia; let a, b;
@@ -1140,18 +1140,18 @@ function indRecs() {
   return Store.list('historico').map(r => {
     const ms = tms(r.ts); if (!ms) return null;
     const d = new Date(ms), t = turnoOf(d);
-    return { ms, h: d.getHours(), wd: t.dia.getDay(), dia: t.dia, dk: dkey(t.dia), turno: t.nome, user: String(r.usuario || '—').toUpperCase(), cpf: r.cpf || '', placa: r.placa || '', transp: r.transpNome || r.transp || '—', conf: r.conf || [], ajud: r.ajud || [] };
+    return { ms, h: d.getHours(), wd: t.dia.getDay(), dia: t.dia, dk: dkey(t.dia), turno: t.nome, user: String(r.usuario || '—').toUpperCase(), cpf: r.cpf || '', placa: r.placa || '', transp: r.transpNome || r.transp || '—', conf: r.conf || [], ajud: r.ajud || [], ts: r.op === 'ts', loja: String(r.loja || '').toUpperCase(), pre: r.pre || '' };
   }).filter(Boolean);
 }
 function calc(L) {
   const inc = (m, k, v = 1) => m.set(k, (m.get(k) || 0) + v);
-  const o = { total: L.length, user: new Map(), turno: new Map(), ut: new Map(), day: new Map(), dayT: new Map(), dayU: new Map(), hour: Array(24).fill(0), wd: Array(7).fill(0), transp: new Map(), equipe: new Map(), cpfs: new Set(), placas: new Set(), buckets: new Set(), comPlaca: 0, comConf: 0, pessoas: 0 };
+  const o = { lojas: new Map(), total: L.length, user: new Map(), turno: new Map(), ut: new Map(), day: new Map(), dayT: new Map(), dayU: new Map(), hour: Array(24).fill(0), wd: Array(7).fill(0), transp: new Map(), equipe: new Map(), cpfs: new Set(), placas: new Set(), buckets: new Set(), comPlaca: 0, comConf: 0, pessoas: 0 };
   for (const x of L) {
     inc(o.user, x.user); inc(o.turno, x.turno); inc(o.ut, x.user + '\u0001' + x.turno); inc(o.day, x.dk); inc(o.dayT, x.dk + '\u0001' + x.turno); inc(o.dayU, x.dk + '\u0001' + x.user);
     o.hour[x.h]++; o.wd[x.wd]++; inc(o.transp, x.transp);
-    [...x.conf, ...x.ajud].forEach(n => inc(o.equipe, String(n).toUpperCase()));
+    if (x.ts) { if (x.loja) inc(o.lojas, x.loja); } else [...x.conf, ...x.ajud].forEach(n => inc(o.equipe, String(n).toUpperCase()));
     if (x.cpf) o.cpfs.add(x.cpf); if (x.placa) { o.placas.add(x.placa); o.comPlaca++; }
-    o.buckets.add(x.dk + '|' + x.h); if (x.conf.length) o.comConf++; o.pessoas += x.conf.length + x.ajud.length;
+    o.buckets.add(x.dk + '|' + x.h); if (x.ts ? x.pre : x.conf.length) o.comConf++; if (!x.ts) o.pessoas += x.conf.length + x.ajud.length;
   }
   o.dias = o.day.size; return o;
 }
@@ -1162,7 +1162,7 @@ function perUser(L) {
     const days = new Set(a.map(x => x.dk)), bk = new Set(a.map(x => x.dk + '|' + x.h)), tn = new Map(), hr = Array(24).fill(0), drv = new Set();
     let gs = 0, gn = 0, pl = 0, cf = 0;
     a.forEach((x, i) => {
-      tn.set(x.turno, (tn.get(x.turno) || 0) + 1); hr[x.h]++; if (x.cpf) drv.add(x.cpf); if (x.placa) pl++; if (x.conf.length) cf++;
+      tn.set(x.turno, (tn.get(x.turno) || 0) + 1); hr[x.h]++; if (x.cpf) drv.add(x.cpf); if (x.placa) pl++; if (x.ts ? x.pre : x.conf.length) cf++;
       if (i) { const p = a[i - 1]; if (p.dk === x.dk && p.turno === x.turno) { const gm = (x.ms - p.ms) / 6e4; if (gm <= PAUSA_MIN) { gs += gm; gn++; } } }
     });
     const top = [...tn.entries()].sort((p, q) => q[1] - p[1])[0];
@@ -1209,6 +1209,7 @@ const kpi = (t, v, s, c) => `<div class="kpi"><div class="kt">${t}</div><div cla
 function viewInd(m) {
   m.innerHTML = `<h2>Indicadores de produtividade</h2><p class="sub">Romaneios copiados por usuário e por turno. Os turnos (e seus horários) são ajustados em Configurações.</p>
   <div class="tools" style="align-items:flex-end">
+    <div><label class="f">Operação</label><select class="in" id="iO" style="min-width:150px;flex:none"><option value="romaneio">Romaneio</option><option value="ts">TS São Paulo</option></select></div>
     <div><label class="f">Período</label><select class="in" id="iP" style="min-width:150px;flex:none"><option value="hoje">Hoje</option><option value="ontem">Ontem</option><option value="7d">Últimos 7 dias</option><option value="30d">Últimos 30 dias</option><option value="mes">Mês atual</option><option value="custom">Personalizado</option></select></div>
     <div id="iC" style="display:flex;gap:8px;align-items:flex-end"><div><label class="f">De</label><input class="in" type="date" id="iDe" style="min-width:140px;flex:none"></div><div><label class="f">Até</label><input class="in" type="date" id="iAte" style="min-width:140px;flex:none"></div></div>
     <div><label class="f">Turno</label><select class="in" id="iT" style="min-width:150px;flex:none"></select></div>
@@ -1216,11 +1217,11 @@ function viewInd(m) {
     <button class="btn" id="iX" type="button">⬇ Exportar tabela (CSV)</button>
   </div>
   <div id="indB"></div>`;
-  $('#iP').value = IND.per; $('#iDe').value = IND.de; $('#iAte').value = IND.ate; $('#iC').hidden = IND.per !== 'custom';
+  $('#iO').value = IND.op; $('#iP').value = IND.per; $('#iDe').value = IND.de; $('#iAte').value = IND.ate; $('#iC').hidden = IND.per !== 'custom';
   let lastRows = null;
   const draw = () => {
     const { a, b, n } = indWindow(), ak = dkey(a), bk = dkey(b), pa = dkey(addDays(a, -n)), pb = dkey(addDays(b, -n));
-    const all = indRecs();
+    const TSM = IND.op === 'ts', all = indRecs().filter(x => TSM ? x.ts : !x.ts);
     const allUsers = [...new Set(all.map(x => x.user))].sort();
     const ucor = u => UCOL[allUsers.indexOf(u) % UCOL.length];
     const tAll = turnos().map(t => t.nome);
@@ -1231,7 +1232,7 @@ function viewInd(m) {
     const f = x => (!IND.turno || x.turno === IND.turno) && (!IND.user || x.user === IND.user);
     const L = all.filter(x => x.dk >= ak && x.dk <= bk && f(x)), P = all.filter(x => x.dk >= pa && x.dk <= pb && f(x));
     const warnLim = Store.mode === 'firebase' && Store.list('historico').length >= HIST_LIMIT ? `<div class="gwarn">O histórico carregado atingiu ${nf(HIST_LIMIT)} registros: períodos mais antigos podem estar incompletos.</div>` : '';
-    const head = `<p class="sub" style="margin-top:-6px">Período: <b>${fdia(a)}${n > 1 ? ' a ' + fdia(b) : ''}</b> (${n} dia${n > 1 ? 's' : ''} operacional${n > 1 ? 'is' : ''}) · ${nf(L.length)} romaneio${L.length === 1 ? '' : 's'}</p>${warnLim}`;
+    const head = `<p class="sub" style="margin-top:-6px">Operação: <b>${TSM ? 'TS São Paulo' : 'Romaneio'}</b> · Período: <b>${fdia(a)}${n > 1 ? ' a ' + fdia(b) : ''}</b> (${n} dia${n > 1 ? 's' : ''} operacional${n > 1 ? 'is' : ''}) · ${nf(L.length)} romaneio${L.length === 1 ? '' : 's'}</p>${warnLim}`;
     if (!L.length) { $('#indB').innerHTML = head + '<div class="card"><div class="empty">Nenhum romaneio registrado neste período / filtro.</div></div>'; lastRows = null; return; }
     const o = calc(L), pu = perUser(L), pt = perTurno(L).filter(t => !IND.turno || t.nome === IND.turno);
     const tnames = turnos().map(t => t.nome); if (L.some(x => x.turno === FORA)) tnames.push(FORA);
@@ -1247,13 +1248,13 @@ function viewInd(m) {
       kpi('Romaneios por hora ativa', nf(o.total / o.buckets.size, 1), `${o.buckets.size} hora${o.buckets.size > 1 ? 's' : ''} com movimento`),
       kpi('Intervalo médio', gapG == null ? '—' : nf(gapG, 1) + ' min', `entre romaneios do mesmo usuário (até ${PAUSA_MIN} min)`),
       kpi('Usuários ativos', nf(pu.length), `de ${allUsers.length} no histórico`),
-      kpi('Melhor usuário', esc(pu[0].user), `${nf(pu[0].n)} romaneios · ${nf(pu[0].n / o.total * 100, 1)}%`, 'var(--ok)'),
+      kpi('Mais romaneios por usuário', esc(pu[0].user), `${nf(pu[0].n)} romaneios · ${nf(pu[0].n / o.total * 100, 1)}%`, 'var(--ok)'),
       kpi('Turno líder', lider ? esc(lider.nome) : '—', lider ? `${nf(lider.n)} romaneios · ${nf(lider.n / o.total * 100, 1)}%` : ''),
       kpi('Hora de pico', hh(picoH), `${nf(o.hour[picoH])} romaneios nessa hora`),
       kpi('Motoristas únicos', nf(o.cpfs.size), `${nf(o.placas.size)} placas diferentes`),
-      kpi('Equipe média por romaneio', nf(o.pessoas / o.total, 1), 'conferentes + ajudantes'),
+      TSM ? kpi('Lojas atendidas', nf(o.lojas.size), 'lojas diferentes') : kpi('Equipe média por romaneio', nf(o.pessoas / o.total, 1), 'conferentes + ajudantes'),
       kpi('Com placa informada', nf(o.comPlaca / o.total * 100, 1) + '%', `${nf(o.total - o.comPlaca)} sem placa`, o.comPlaca / o.total < .9 ? 'var(--accent)' : ''),
-      kpi('Com conferente', nf(o.comConf / o.total * 100, 1) + '%', `${nf(o.total - o.comConf)} sem conferente`, o.comConf / o.total < .9 ? 'var(--accent)' : '')
+      TSM ? kpi('Com pré informado', nf(o.comConf / o.total * 100, 1) + '%', `${nf(o.total - o.comConf)} sem pré`, o.comConf / o.total < .9 ? 'var(--accent)' : '') : kpi('Com conferente', nf(o.comConf / o.total * 100, 1) + '%', `${nf(o.total - o.comConf)} sem conferente`, o.comConf / o.total < .9 ? 'var(--accent)' : '')
     ].join('');
     const cUser = hbar(pu.map(u => ({ l: u.user, v: u.n, c: ucor(u.user) })));
     const cUT = legend(tnames) + hstack(pu.map(u => ({ l: u.user, tot: u.n, segs: tnames.map(t => ({ t, v: o.ut.get(u.user + '\u0001' + t) || 0, c: turnoCor(t) })) })));
@@ -1264,11 +1265,11 @@ function viewInd(m) {
     const cHour = legend(tnames) + cols(o.hour.map((v, h) => ({ l: hh(h), tot: v, segs: [{ v, c: turnoCor(turnoOf(new Date(2000, 0, 1, h, 30)).nome) }] })));
     const cWd = cols(o.wd.map((v, i) => ({ l: WDN[i], tot: v, segs: [{ v, c: 'var(--accent)' }] })));
     const cTr = hbar([...o.transp.entries()].sort((p, q) => q[1] - p[1]).slice(0, 10).map(([l, v]) => ({ l, v, c: 'var(--info)' })));
-    const cEq = hbar([...o.equipe.entries()].sort((p, q) => q[1] - p[1]).slice(0, 10).map(([l, v]) => ({ l, v, c: 'var(--ok)' })));
+    const cEq = hbar([...(TSM ? o.lojas : o.equipe).entries()].sort((p, q) => q[1] - p[1]).slice(0, 10).map(([l, v]) => ({ l, v, c: 'var(--ok)' })));
     const rowsU = pu.map(u => `<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${ucor(u.user)};margin-right:7px"></span><b>${esc(u.user)}</b></td><td class="n">${nf(u.n)}</td><td class="n">${nf(u.n / o.total * 100, 1)}%</td><td class="n">${u.dias}</td><td class="n">${nf(u.perDia, 1)}</td><td class="n">${nf(u.perHora, 1)}</td><td class="n">${u.gap == null ? '—' : nf(u.gap, 1) + ' min'}</td><td>${esc(u.turno)}</td><td class="n">${hh(u.pico)}</td><td class="n">${u.drv}</td><td class="n">${nf(u.pPlaca * 100, 0)}%</td><td class="n">${nf(u.pConf * 100, 0)}%</td></tr>`).join('');
     const totRow = `<tr><td>TOTAL</td><td class="n">${nf(o.total)}</td><td class="n">100%</td><td class="n">${o.dias}</td><td class="n">${nf(o.total / o.dias, 1)}</td><td class="n">${nf(o.total / o.buckets.size, 1)}</td><td class="n">${gapG == null ? '—' : nf(gapG, 1) + ' min'}</td><td>${lider ? esc(lider.nome) : '—'}</td><td class="n">${hh(picoH)}</td><td class="n">${o.cpfs.size}</td><td class="n">${nf(o.comPlaca / o.total * 100, 0)}%</td><td class="n">${nf(o.comConf / o.total * 100, 0)}%</td></tr>`;
     const rowsT = pt.map(t => `<tr><td><span style="display:inline-block;width:9px;height:9px;border-radius:3px;background:${turnoCor(t.nome)};margin-right:7px"></span><b>${esc(t.nome)}</b></td><td>${esc(t.hor)}</td><td class="n">${nf(t.n)}</td><td class="n">${nf(t.n / o.total * 100, 1)}%</td><td class="n">${t.users}</td><td class="n">${nf(t.perDia, 1)}</td><td class="n">${nf(t.perHora, 1)}</td><td class="n">${hh(t.pico)}</td><td>${esc(t.top)}</td></tr>`).join('');
-    lastRows = [['Usuario', 'Romaneios', '% do total', 'Dias ativos', 'Media por dia', 'Media por hora ativa', 'Intervalo medio (min)', 'Turno principal', 'Hora de pico', 'Motoristas unicos', '% com placa', '% com conferente'],
+    lastRows = [['Usuario', 'Romaneios', '% do total', 'Dias ativos', 'Media por dia', 'Media por hora ativa', 'Intervalo medio (min)', 'Turno principal', 'Hora de pico', 'Motoristas unicos', '% com placa', TSM ? '% com pre' : '% com conferente'],
       ...pu.map(u => [u.user, u.n, nf(u.n / o.total * 100, 1), u.dias, nf(u.perDia, 1), nf(u.perHora, 1), u.gap == null ? '' : nf(u.gap, 1), u.turno, hh(u.pico), u.drv, nf(u.pPlaca * 100, 0), nf(u.pConf * 100, 0)])];
     $('#indB').innerHTML = head + `<div class="kpis">${kpis}</div>
     <div class="grid g2">
@@ -1280,12 +1281,13 @@ function viewInd(m) {
       <div class="card"><h3>Produção por hora do dia</h3>${cHour}</div>
       <div class="card"><h3>Por dia da semana</h3>${cWd}</div>
       <div class="card"><h3>Top transportadoras</h3>${cTr}</div>
-      <div class="card"><h3>Equipe mais presente (conferentes e ajudantes)</h3>${cEq}</div>
+      <div class="card"><h3>${TSM ? 'Lojas com mais romaneios' : 'Equipe mais presente (conferentes e ajudantes)'}</h3>${cEq}</div>
     </div>
-    <div class="card" style="margin-top:16px"><h3>Produtividade por usuário</h3><div class="tw" style="max-height:none"><table class="indtb"><thead><tr><th>Usuário</th><th class="n">Romaneios</th><th class="n">% do total</th><th class="n">Dias ativos</th><th class="n">Média/dia</th><th class="n">Média/hora ativa</th><th class="n">Intervalo médio</th><th>Turno principal</th><th class="n">Hora de pico</th><th class="n">Motoristas únicos</th><th class="n">% com placa</th><th class="n">% com conferente</th></tr></thead><tbody>${rowsU}</tbody><tfoot>${totRow}</tfoot></table></div></div>
+    <div class="card" style="margin-top:16px"><h3>Produtividade por usuário</h3><div class="tw" style="max-height:none"><table class="indtb"><thead><tr><th>Usuário</th><th class="n">Romaneios</th><th class="n">% do total</th><th class="n">Dias ativos</th><th class="n">Média/dia</th><th class="n">Média/hora ativa</th><th class="n">Intervalo médio</th><th>Turno principal</th><th class="n">Hora de pico</th><th class="n">Motoristas únicos</th><th class="n">% com placa</th><th class="n">${TSM ? '% com pré' : '% com conferente'}</th></tr></thead><tbody>${rowsU}</tbody><tfoot>${totRow}</tfoot></table></div></div>
     <div class="card" style="margin-top:16px"><h3>Resumo por turno</h3><div class="tw" style="max-height:none"><table class="indtb"><thead><tr><th>Turno</th><th>Horário</th><th class="n">Romaneios</th><th class="n">% do total</th><th class="n">Usuários</th><th class="n">Média/dia</th><th class="n">Média/hora ativa</th><th class="n">Hora de pico</th><th>Quem mais produziu</th></tr></thead><tbody>${rowsT}</tbody></table></div></div>`;
   };
   const save = () => LS.set('rom_ind', IND);
+  $('#iO').onchange = e => { IND.op = e.target.value; save(); draw(); };
   $('#iP').onchange = e => { IND.per = e.target.value; $('#iC').hidden = IND.per !== 'custom'; save(); draw(); };
   $('#iDe').onchange = e => { IND.de = e.target.value; save(); draw(); };
   $('#iAte').onchange = e => { IND.ate = e.target.value; save(); draw(); };
@@ -1294,7 +1296,7 @@ function viewInd(m) {
   $('#iX').onclick = () => {
     if (!lastRows) return toast('Nada para exportar neste período');
     const csv = lastRows.map(r => r.map(x => String(x ?? '').replace(/;/g, ',')).join(';')).join('\r\n');
-    const el = document.createElement('a'); el.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); el.download = 'indicadores_usuarios.csv'; el.click();
+    const el = document.createElement('a'); el.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); el.download = IND.op === 'ts' ? 'indicadores_ts_sao_paulo.csv' : 'indicadores_usuarios.csv'; el.click();
   };
   INDV = draw; draw();
 }
