@@ -1039,21 +1039,84 @@ function splitEquipe(r) {
   return q;
 }
 /* ---------- HISTÓRICO ---------- */
+/* filtros avançados: valem para TODO o histórico carregado (não só os 150 mais recentes) */
+let HF = { per: '', d1: '', d2: '', wd: '', user: '', transp: '', dest: '' }, HB = null;
+const hfActive = () => !!(HF.per || HF.wd || HF.user || HF.transp || HF.dest);
 function viewHist(m) {
-  const rows = Store.list('historico').sort((a, b) => tms(b.ts) - tms(a.ts)).slice(0, 150);
+  if (HB && m.querySelector('#hFilt')) return HB();   /* já está na tela: só atualiza a tabela, sem perder o que está sendo digitado */
   const adm = isAdm();
-  m.innerHTML = `<h2>Histórico de romaneios copiados</h2><p class="sub">Últimos 150 registros de todos os usuários.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}</p><div class="tw" id="histTw"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Motorista</th><th>Transportadora</th><th>Placa</th><th>Destino</th><th>Pré</th><th>Placa 2</th><th>Lacre</th><th>Equipe</th>${adm ? '<th></th>' : ''}</tr></thead><tbody>${rows.map(r => `<tr data-id="${esc(r.id)}" style="cursor:default"><td>${new Date(tms(r.ts)).toLocaleString('pt-BR')}${r.updatedBy ? `<br><small class="warn" title="Editado por ${esc(r.updatedBy)}">✎ editado</small>` : ''}</td><td>${esc(r.usuario)}</td><td>${esc(r.nome)}<br><small class="mono">${fmtCpf(r.cpf)}</small></td><td>${esc(r.transpNome || r.transp)}</td><td class="mono">${esc(r.placa)}</td>${(q => `<td>${esc(q.destino.join(', '))}</td><td class="mono">${esc(q.pre.join(', '))}</td><td class="mono">${esc(q.placa2.join(', '))}</td><td class="mono">${esc(q.lacre.join(', '))}</td><td>${esc(q.equipe.join(', '))}</td>`)(splitEquipe(r))}${adm ? '<td style="white-space:nowrap"><button class="btn sm" data-ed title="Editar">✎</button> <button class="btn sm danger" data-rm title="Excluir">✕</button></td>' : ''}</tr>`).join('') || `<tr><td colspan="${adm ? 7 : 6}" class="empty">Sem registros.</td></tr>`}</tbody></table></div>`;
+  m.innerHTML = `<h2>Histórico de romaneios copiados</h2><p class="sub" id="hSub"></p>
+  <div class="card" id="hFilt" style="margin-bottom:12px"><h3>Filtros avançados</h3>
+    <div class="tools" style="align-items:flex-end;margin:0">
+      <div><label class="f">Data</label><select class="in" id="hP" style="min-width:170px;flex:none"><option value="">Todo o histórico</option><option value="hoje">Hoje</option><option value="ontem">Ontem</option><option value="7d">Últimos 7 dias</option><option value="mes">Mês atual</option><option value="data">Data específica</option><option value="int">Intervalo de datas</option></select></div>
+      <div id="hD1w"><label class="f" id="hD1l">De</label><input class="in" type="date" id="hD1" style="min-width:140px;flex:none"></div>
+      <div id="hD2w"><label class="f">Até</label><input class="in" type="date" id="hD2" style="min-width:140px;flex:none"></div>
+      <div><label class="f">Dia da semana</label><select class="in" id="hW" style="min-width:140px;flex:none"><option value="">Todos</option>${WDN.map((n, i) => `<option value="${i}">${n}</option>`).join('')}</select></div>
+      <div><label class="f">Usuário</label><input class="in" id="hU" list="hUl" placeholder="Todos" autocomplete="off" style="min-width:150px;flex:none"></div>
+      <div><label class="f">Transportadora</label><input class="in" id="hT" list="hTl" placeholder="Todas" autocomplete="off" style="min-width:190px;flex:none"></div>
+      <div><label class="f">Destino</label><input class="in" id="hDs" list="hDl" placeholder="Todos" autocomplete="off" style="min-width:150px;flex:none"></div>
+      <button class="btn" id="hClr" type="button">Limpar filtros</button>
+    </div>
+    <datalist id="hUl"></datalist><datalist id="hTl"></datalist><datalist id="hDl"></datalist>
+  </div>
+  <div class="tw" id="histTw"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Motorista</th><th>Transportadora</th><th>Placa</th><th>Destino</th><th>Pré</th><th>Placa 2</th><th>Lacre</th><th>Equipe</th>${adm ? '<th></th>' : ''}</tr></thead><tbody id="hB"></tbody></table></div>`;
   /* a tabela ocupa toda a altura disponível até o rodapé (sem sobra vazia nem corte) */
   const fitHist = () => { const t = document.getElementById('histTw'); if (!t) return window.removeEventListener('resize', fitHist); t.style.maxHeight = Math.max(200, Math.floor(m.getBoundingClientRect().bottom - t.getBoundingClientRect().top - 18)) + 'px'; };
-  fitHist(); window.addEventListener('resize', fitHist);
-  if (adm) m.querySelectorAll('tbody tr[data-id]').forEach(tr => {
-    const id = tr.dataset.id;
-    tr.querySelector('[data-ed]').onclick = () => editHist(id);
-    tr.querySelector('[data-rm]').onclick = async () => {
-      const r = Store.get('historico', id); if (!r) return;
-      if (confirm(`Excluir este registro do histórico?\n${r.nome || ''} · ${r.placa || ''}\nA exclusão vale para TODOS os usuários e altera os indicadores.`)) { await Store.del('historico', id); toast('Registro excluído'); }
-    };
-  });
+  const LIM = 1000;
+  const body = () => {
+    if (!document.getElementById('hB')) return;
+    const all = Store.list('historico').sort((a, b) => tms(b.ts) - tms(a.ts));
+    const spl = new Map(all.map(r => [r.id, splitEquipe(r)]));
+    const dl = (id, arr) => { const el = document.getElementById(id); if (el) el.innerHTML = [...new Set(arr.map(x => String(x || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt')).map(v => `<option value="${esc(v)}"></option>`).join(''); };
+    dl('hUl', all.map(r => r.usuario)); dl('hTl', all.map(r => r.transpNome || r.transp)); dl('hDl', all.flatMap(r => spl.get(r.id).destino));
+    let rows;
+    if (hfActive()) {
+      const hoje = new Date(), has = (v, q) => !q || norm(v).includes(norm(q));
+      let a = '', b = '';
+      if (HF.per === 'hoje') a = b = dkey(hoje);
+      else if (HF.per === 'ontem') a = b = dkey(addDays(hoje, -1));
+      else if (HF.per === '7d') { a = dkey(addDays(hoje, -6)); b = dkey(hoje); }
+      else if (HF.per === 'mes') { a = dkey(new Date(hoje.getFullYear(), hoje.getMonth(), 1)); b = dkey(hoje); }
+      else if (HF.per === 'data') a = b = HF.d1;
+      else if (HF.per === 'int') { a = HF.d1; b = HF.d2; if (a && b && a > b) [a, b] = [b, a]; }
+      rows = all.filter(r => {
+        const ms = tms(r.ts), d = new Date(ms), k = dkey(d);
+        if (a && k < a) return false; if (b && k > b) return false;
+        if (HF.wd !== '' && d.getDay() !== +HF.wd) return false;
+        if (!has(r.usuario, HF.user)) return false;
+        if (!has((r.transpNome || '') + ' ' + (r.transp || ''), HF.transp)) return false;
+        if (HF.dest && !spl.get(r.id).destino.some(x => has(x, HF.dest))) return false;
+        return true;
+      });
+    } else rows = all.slice(0, 150);
+    const n = rows.length; if (hfActive()) rows = rows.slice(0, LIM);
+    $('#hSub').textContent = hfActive()
+      ? `${nf(n)} registro${n === 1 ? '' : 's'} encontrado${n === 1 ? '' : 's'} de ${nf(all.length)} carregados${n > LIM ? ` · mostrando os ${nf(LIM)} mais recentes` : ''}${Store.mode === 'firebase' && all.length >= HIST_LIMIT ? ` · o histórico carregado está limitado a ${nf(HIST_LIMIT)} registros` : ''}.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}`
+      : `Últimos 150 registros de todos os usuários.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}`;
+    $('#hB').innerHTML = rows.map(r => `<tr data-id="${esc(r.id)}" style="cursor:default"><td>${new Date(tms(r.ts)).toLocaleString('pt-BR')}${r.updatedBy ? `<br><small class="warn" title="Editado por ${esc(r.updatedBy)}">✎ editado</small>` : ''}</td><td>${esc(r.usuario)}</td><td>${esc(r.nome)}<br><small class="mono">${fmtCpf(r.cpf)}</small></td><td>${esc(r.transpNome || r.transp)}</td><td class="mono">${esc(r.placa)}</td>${(q => `<td>${esc(q.destino.join(', '))}</td><td class="mono">${esc(q.pre.join(', '))}</td><td class="mono">${esc(q.placa2.join(', '))}</td><td class="mono">${esc(q.lacre.join(', '))}</td><td>${esc(q.equipe.join(', '))}</td>`)(spl.get(r.id))}${adm ? '<td style="white-space:nowrap"><button class="btn sm" data-ed title="Editar">✎</button> <button class="btn sm danger" data-rm title="Excluir">✕</button></td>' : ''}</tr>`).join('') || `<tr><td colspan="${adm ? 11 : 10}" class="empty">${hfActive() ? 'Nenhum registro encontrado com esses filtros.' : 'Sem registros.'}</td></tr>`;
+    if (adm) m.querySelectorAll('#hB tr[data-id]').forEach(tr => {
+      const id = tr.dataset.id;
+      tr.querySelector('[data-ed]').onclick = () => editHist(id);
+      tr.querySelector('[data-rm]').onclick = async () => {
+        const r = Store.get('historico', id); if (!r) return;
+        if (confirm(`Excluir este registro do histórico?\n${r.nome || ''} · ${r.placa || ''}\nA exclusão vale para TODOS os usuários e altera os indicadores.`)) { await Store.del('historico', id); toast('Registro excluído'); }
+      };
+    });
+    fitHist();
+  };
+  HB = body;
+  const sync = () => { $('#hP').value = HF.per; $('#hD1').value = HF.d1; $('#hD2').value = HF.d2; $('#hW').value = HF.wd; $('#hU').value = HF.user; $('#hT').value = HF.transp; $('#hDs').value = HF.dest;
+    $('#hD1w').hidden = !(HF.per === 'data' || HF.per === 'int'); $('#hD2w').hidden = HF.per !== 'int'; $('#hD1l').textContent = HF.per === 'data' ? 'Data' : 'De'; };
+  let tmr; const later = () => { clearTimeout(tmr); tmr = setTimeout(body, 200); };
+  $('#hP').onchange = e => { HF.per = e.target.value; sync(); body(); };
+  $('#hD1').onchange = e => { HF.d1 = e.target.value; body(); };
+  $('#hD2').onchange = e => { HF.d2 = e.target.value; body(); };
+  $('#hW').onchange = e => { HF.wd = e.target.value; body(); };
+  $('#hU').oninput = e => { HF.user = e.target.value; later(); };
+  $('#hT').oninput = e => { HF.transp = e.target.value; later(); };
+  $('#hDs').oninput = e => { HF.dest = e.target.value; later(); };
+  $('#hClr').onclick = () => { HF = { per: '', d1: '', d2: '', wd: '', user: '', transp: '', dest: '' }; sync(); body(); };
+  sync(); body(); window.addEventListener('resize', fitHist);
 }
 const tms = t => t && t.toMillis ? t.toMillis() : (t instanceof Date ? t.getTime() : (typeof t === 'number' ? t : 0));
 
