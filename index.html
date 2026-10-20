@@ -839,7 +839,7 @@ const tsCur = c => { if (!c) return 1; if (TS.corte > 0) return TS.corte; const 
 /* campo do GAN tem 11 posições: "LACR: 41114" cabe; com lacre maior tira o espaço e, se ainda não couber, vai só o número */
 const tsLacre = l => { l = String(l || '').trim(); if (!l) return ''; return ['LACR: ' + l, 'LACR:' + l].find(x => x.length <= 11) || l; };
 /* célula com mais de um lacre ("512434/512433"): um lacre por campo de Ajudante (1, 2, 3) — assim cada um cabe nas 11 posições e o espelho = texto copiado */
-const tsLacres = v => { const p = String(v || '').split(/[\/;,\s]+/).map(x => x.trim()).filter(Boolean).slice(0, 3).map(tsLacre); while (p.length < 3) p.push(''); return p; };
+const tsLacres = v => { const p = String(v || '').split(/[\/;,\s]+/).map(x => x.trim()).filter(Boolean).slice(0, 3); while (p.length < 3) p.push(''); return p; };
 const tsR = (c, n) => ({ cpf: c.cpf, placa: String(c.placa || '').toUpperCase(), conf: [c.loja, tsPre(c, n), ''], ajud: tsLacres(c.lacre) });
 /* RG: vem da coluna RG da planilha carregada; se a planilha não trouxer, usa o do cadastro */
 const tsDrv = c => { const d = Store.get('motoristas', c.cpf) || { cpf: c.cpf, nome: c.nome, rg: '', transp: '', placa: c.placa, _tmp: true }; return c.rg ? { ...d, rg: c.rg } : d; };
