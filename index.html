@@ -906,6 +906,7 @@ function viewRomaneioTS(m) {
     const c = TS.cargas[TS.sel]; if (!c) return;
     const n = tsCur(c); if (!tsPre(c, n)) return;
     const d = tsDrv(c), R2 = tsR(c, n), k = tsKey(c, n), txt = pasteText(buildPaste(tsRp(R2, c), d));
+    if (!d.transp && !confirm('ATENÇÃO: este motorista está SEM transportadora no Cadastro.\n\nA linha 4 do texto vai sair vazia e o GAN vai desalinhar os campos (a placa e os conferentes não entram corretamente).\n\nCadastre a transportadora na aba Cadastro antes de colar.\n\nCopiar mesmo assim?')) return;
     try { await navigator.clipboard.writeText(txt); } catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
     TS.feito[k] = Date.now(); saveTS();
     try { await Store.add('historico', { cpf: d.cpf, nome: d.nome, transp: d.transp || '', transpNome: transpName(d.transp), placa: R2.placa, conf: R2.conf.filter(Boolean), ajud: R2.ajud.filter(Boolean), usuario: Store.user || 'anon', op: 'ts', loja: c.loja || '', pre: tsPre(c, n) || '', lacre: c.lacre || '' }); } catch (e) { console.warn(e); }
