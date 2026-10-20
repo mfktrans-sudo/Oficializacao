@@ -742,6 +742,14 @@ const tsPre = (c, n, src = TS.src) => c.pres ? ((c.pres[src] || [])[n - 1] || ''
 const tsCortes = () => { let mx = 4; TS.cargas.forEach(c => c.pres && Object.values(c.pres).forEach(a => { mx = Math.max(mx, a.length); })); return Array.from({ length: Math.min(mx, 12) }, (_, i) => i + 1); };
 const tsCpf = c => { const d = digits(c); return d.length === 11 ? fmtCpf(d) : (c || ''); };
 
+/* coluna do lacre do BAÚ: título "LACRE - BAÚ" (qualquer variação com LACRE + BAÚ) na linha do cabeçalho ou nas 3 linhas acima dela; as colunas de lacre da LV são ignoradas */
+const tsBauCol = (rows, r, h) => {
+  const ok = x => /LACR/.test(x) && /BAU/.test(x);
+  let k = h.findIndex(ok); if (k >= 0) return k;
+  for (let u = r - 1; u >= Math.max(0, r - 3); u--) { k = (rows[u] || []).map(v => norm(tsClean(v))).findIndex(ok); if (k >= 0) return k; }
+  return -1;
+};
+const tsColL = n => { let s = ''; for (n++; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s; return s; };
 /* lê as abas (matriz de linhas) e devolve as cargas com os pré de cada corte */
 function tsParse(sheets) {
   const N = v => norm(tsClean(v));
@@ -749,13 +757,13 @@ function tsParse(sheets) {
   for (const sh of sheets) {
     for (let r = 0; r < Math.min(sh.rows.length, 40) && !cargas; r++) {
       const h = (sh.rows[r] || []).map(N), ix = f => h.findIndex(f);
-      const c = { seq: ix(x => /^SEQ/.test(x)), loja: ix(x => x === 'LOJA'), placa: ix(x => /^PLACA/.test(x)), nome: ix(x => x === 'MOTORISTA' || x === 'NOME'), lacre: (k => k >= 0 ? k : (/LACR/.test(h[6] || '') ? 6 : ix(x => /LACR/.test(x))))(ix(x => /LACR/.test(x) && /BAU/.test(x))), cpf: ix(x => x === 'CPF'), rg: ix(x => /^(RG|R\.?\s?G\.?|IDENTIDADE|REGISTRO GERAL)(\s+(DO\s+)?MOTORISTA)?$/.test(x)) };
+      const c = { seq: ix(x => /^SEQ/.test(x)), loja: ix(x => x === 'LOJA'), placa: ix(x => /^PLACA/.test(x)), nome: ix(x => x === 'MOTORISTA' || x === 'NOME'), lacre: (k => k >= 0 ? k : ix(x => /LACR/.test(x)))(tsBauCol(sh.rows, r, h)), cpf: ix(x => x === 'CPF'), rg: ix(x => /^(RG|R\.?\s?G\.?|IDENTIDADE|REGISTRO GERAL)(\s+(DO\s+)?MOTORISTA)?$/.test(x)) };
       if (c.loja < 0 || c.placa < 0 || c.nome < 0 || c.cpf < 0) continue;
       cargas = [];
       /* colunas de pré: PRÉ, PRÉ-ROMANEIO, PRE-05… (cada uma é uma "fonte"; valores separados por / = cortes) */
       preCols = []; const hr = sh.rows[r] || [];
       h.forEach((x, i) => { if (/^PRE(?!ENCH|VIS|C|S)/.test(x) && !/CORTE/.test(x)) { let nm = tsClean(hr[i]) || 'PRÉ'; while (preCols.some(p => p.name === nm)) nm += ' 2'; preCols.push({ name: nm, i }); } });
-      lacreHdr = c.lacre >= 0 ? (tsClean(hr[c.lacre]) || 'LACRE') + ' (col. ' + String.fromCharCode(65 + c.lacre % 26) + ')' : '';
+      lacreHdr = c.lacre >= 0 ? (tsClean(hr[c.lacre]) || 'LACRE') + ' (col. ' + tsColL(c.lacre + (sh.off || 0)) + ')' : '';
       for (let i = r + 1; i < sh.rows.length; i++) {
         const w = sh.rows[i] || [];
         const loja = tsClean(w[c.loja]), placa = tsClean(w[c.placa]).toUpperCase(), nome = tsClean(w[c.nome]).toUpperCase(), d = digits(w[c.cpf]);
@@ -815,7 +823,7 @@ const tsKey = (c, n) => c.seq + '|' + TS.src + '|' + n;
 async function tsLoad(file) {
   const X = await loadXLSX();
   const wb = X.read(await file.arrayBuffer(), { type: 'array' });
-  const sheets = wb.SheetNames.map(n => ({ name: n, rows: X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' }) }));
+  const sheets = wb.SheetNames.map(n => ({ name: n, off: (wb.Sheets[n]['!ref'] ? X.utils.decode_range(wb.Sheets[n]['!ref']).s.c : 0), rows: X.utils.sheet_to_json(wb.Sheets[n], { header: 1, raw: true, defval: '' }) }));
   const r = tsParse(sheets);
   if (!r) throw new Error('Não encontrei a tabela de cargas. A planilha precisa ter as colunas LOJA, PLACAS, MOTORISTA, PRÉ, LACRE e CPF.');
   TS = { v: 2, cargas: r.cargas, sel: 0, corte: 0, feito: {}, fonte: file.name, quando: Date.now(), cortes: r.cortes, fontes: r.fontes, src: r.fontes.find(f => /ROMANEIO/.test(norm(f))) || r.fontes[0] || '', lacreHdr: r.lacre };
@@ -830,7 +838,9 @@ const tsCur = c => { if (!c) return 1; if (TS.corte > 0) return TS.corte; const 
 /* mesmos dados da aba Romaneio: motorista do cadastro + equipe (Conferente 1 = loja/destino, Conferente 2 = pré, Ajudante 1 = lacre) */
 /* campo do GAN tem 11 posições: "LACR: 41114" cabe; com lacre maior tira o espaço e, se ainda não couber, vai só o número */
 const tsLacre = l => { l = String(l || '').trim(); if (!l) return ''; return ['LACR: ' + l, 'LACR:' + l].find(x => x.length <= 11) || l; };
-const tsR = (c, n) => ({ cpf: c.cpf, placa: String(c.placa || '').toUpperCase(), conf: [c.loja, tsPre(c, n), ''], ajud: [tsLacre(c.lacre), '', ''] });
+/* célula com mais de um lacre ("512434/512433"): um lacre por campo de Ajudante (1, 2, 3) — assim cada um cabe nas 11 posições e o espelho = texto copiado */
+const tsLacres = v => { const p = String(v || '').split(/[\/;,\s]+/).map(x => x.trim()).filter(Boolean).slice(0, 3).map(tsLacre); while (p.length < 3) p.push(''); return p; };
+const tsR = (c, n) => ({ cpf: c.cpf, placa: String(c.placa || '').toUpperCase(), conf: [c.loja, tsPre(c, n), ''], ajud: tsLacres(c.lacre) });
 /* RG: vem da coluna RG da planilha carregada; se a planilha não trouxer, usa o do cadastro */
 const tsDrv = c => { const d = Store.get('motoristas', c.cpf) || { cpf: c.cpf, nome: c.nome, rg: '', transp: '', placa: c.placa, _tmp: true }; return c.rg ? { ...d, rg: c.rg } : d; };
 /* texto copiado/espelho da TS: Conferente 1 vazio, Conferente 2 = sequência da carga, Conferente 3 = nome da loja (o pré é digitado em outro campo do sistema) */
