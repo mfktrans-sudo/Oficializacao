@@ -844,6 +844,12 @@ const tsR = (c, n) => ({ cpf: c.cpf, placa: String(c.placa || '').toUpperCase(),
 /* RG: vem da coluna RG da planilha carregada; se a planilha não trouxer, usa o do cadastro */
 const tsDrv = c => { const d = Store.get('motoristas', c.cpf) || { cpf: c.cpf, nome: c.nome, rg: '', transp: '', placa: c.placa, _tmp: true }; return c.rg ? { ...d, rg: c.rg } : d; };
 /* texto copiado/espelho da TS: Conferente 1 vazio, Conferente 2 = sequência da carga, Conferente 3 = nome da loja (o pré é digitado em outro campo do sistema) */
+const tsLines = (R2, c, d) => {
+  const lines = buildPaste(tsRp(R2, c), d), L = layout();
+  const i = L.linhas.findIndex(t => /\{confirma[|}]/.test(t));
+  if (!(d && d.transp) && i >= 0 && lines[i] === L.confirma) lines.splice(i, 1);
+  return lines;
+};
 const tsRp = (R, c) => ({ ...R, conf: ['', c ? String(c.seq) : '', c ? String(c.loja || '') : ''] });
 
 function viewRomaneioTS(m) {
@@ -888,7 +894,7 @@ function viewRomaneioTS(m) {
     $('#tsInfo').innerHTML = c ? `<div class="kv"><b>Seq / Loja</b><span>${c.seq} · ${esc(c.loja)}</span><b>Motorista</b><span>${esc(c.nome)}</span><b>CPF</b><span class="mono">${tsCpf(c.cpf)} ${cpfOk(c.cpf) ? '' : '<span class="warn">· CPF inválido</span>'}</span><b>RG</b><span>${esc(drv.rg) || '—'}</span><b>Transportadora</b><span>${esc(drv.transp)} ${esc(transpName(drv.transp))} ${drv._tmp ? '<span class="warn">· motorista não cadastrado (cadastre na aba Cadastro)</span>' : (transpName(drv.transp) ? '' : '<span class="warn">· código sem transportadora</span>')}</span><b>Placa</b><span class="mono">${esc(c.placa) || '<span class="warn">sem placa</span>'}</span><b>Lacre</b><span class="mono">${esc(c.lacre) || '<span class="warn">sem lacre</span>'}</span>
       <b>Pré atual</b><span class="mono">${esc(pre) ? `${esc(pre)} <small>(${n}° corte)</small>` : '<span class="warn">sem pré</span>'}</span><b>Pré por corte</b><span class="mono">${tsCortes().map(k => `${k}°: ${esc(tsPre(c, k)) || '—'}${TS.feito[tsKey(c, k)] ? ' ✓' : ''}`).join(' &nbsp; ')}</span></div>${dn ? '<p class="sub" style="margin:10px 0 0;color:var(--ok);font-weight:700">✓ Finalizada — todos os prés desta carga foram romaneados</p>' : (pend.length > 1 ? `<p class="sub" style="margin:10px 0 0">Depois deste: ${pend.slice(1).map(k => k + '° corte (' + esc(tsPre(c, k)) + ')').join(', ')}</p>` : '')}` : '<p class="sub">Nenhuma carga selecionada.</p>';
     $('#tsScr').textContent = screenText(tsRp(R2, c), drv).join('\n');
-    const lines = c ? buildPaste(tsRp(R2, c), drv) : [];
+    const lines = c ? tsLines(R2, c, drv) : [];
     $('#tsPaste').innerHTML = lines.map((l, i) => `<div class="ln"><span class="n">${i + 1}</span><span class="t">${l ? esc(l).replace(/^( +)/, x => '<i>' + '·'.repeat(x.length) + '</i>') : '<i>(vazia)</i>'}</span><span class="l">${l.length}</span></div>`).join('');
     $('#tsCnt').textContent = `· ${lines.length} linhas · ${pasteText(lines).length} caracteres`;
     const mx = Math.max(...lines.map(l => l.length), 10);
@@ -915,8 +921,7 @@ function viewRomaneioTS(m) {
   $('#tsCopy').onclick = async () => {
     const c = TS.cargas[TS.sel]; if (!c) return;
     const n = tsCur(c); if (!tsPre(c, n)) return;
-    const d = tsDrv(c), R2 = tsR(c, n), k = tsKey(c, n), txt = pasteText(buildPaste(tsRp(R2, c), d));
-    if (!d.transp && !confirm('ATENÇÃO: este motorista está SEM transportadora no Cadastro.\n\nA linha 4 do texto vai sair vazia e o GAN vai desalinhar os campos (a placa e os conferentes não entram corretamente).\n\nCadastre a transportadora na aba Cadastro antes de colar.\n\nCopiar mesmo assim?')) return;
+    const d = tsDrv(c), R2 = tsR(c, n), k = tsKey(c, n), txt = pasteText(tsLines(R2, c, d));
     try { await navigator.clipboard.writeText(txt); } catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
     TS.feito[k] = Date.now(); saveTS();
     try { await Store.add('historico', { cpf: d.cpf, nome: d.nome, transp: d.transp || '', transpNome: transpName(d.transp), placa: R2.placa, conf: R2.conf.filter(Boolean), ajud: R2.ajud.filter(Boolean), usuario: Store.user || 'anon', op: 'ts', loja: c.loja || '', pre: tsPre(c, n) || '', lacre: c.lacre || '' }); } catch (e) { console.warn(e); }
