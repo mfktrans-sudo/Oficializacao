@@ -763,7 +763,7 @@ function tsParse(sheets) {
       /* colunas de pré: PRÉ, PRÉ-ROMANEIO, PRE-05… (cada uma é uma "fonte"; valores separados por / = cortes) */
       preCols = []; const hr = sh.rows[r] || [];
       h.forEach((x, i) => { if (/^PRE(?!ENCH|VIS|C|S)/.test(x) && !/CORTE/.test(x)) { let nm = tsClean(hr[i]) || 'PRÉ'; while (preCols.some(p => p.name === nm)) nm += ' 2'; preCols.push({ name: nm, i }); } });
-      lacreHdr = c.lacre >= 0 ? (tsClean(hr[c.lacre]) || 'LACRE') + ' (col. ' + tsColL(c.lacre + (sh.off || 0)) + ')' : '';
+      lacreHdr = c.lacre >= 0 ? tsClean(hr[c.lacre]) : '';
       for (let i = r + 1; i < sh.rows.length; i++) {
         const w = sh.rows[i] || [];
         const loja = tsClean(w[c.loja]), placa = tsClean(w[c.placa]).toUpperCase(), nome = tsClean(w[c.nome]).toUpperCase(), d = digits(w[c.cpf]);
