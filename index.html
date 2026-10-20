@@ -749,13 +749,13 @@ function tsParse(sheets) {
   for (const sh of sheets) {
     for (let r = 0; r < Math.min(sh.rows.length, 40) && !cargas; r++) {
       const h = (sh.rows[r] || []).map(N), ix = f => h.findIndex(f);
-      const c = { seq: ix(x => /^SEQ/.test(x)), loja: ix(x => x === 'LOJA'), placa: ix(x => /^PLACA/.test(x)), nome: ix(x => x === 'MOTORISTA' || x === 'NOME'), lacre: ix(x => /LACR/.test(x)), cpf: ix(x => x === 'CPF'), rg: ix(x => /^(RG|R\.?\s?G\.?|IDENTIDADE|REGISTRO GERAL)(\s+(DO\s+)?MOTORISTA)?$/.test(x)) };
+      const c = { seq: ix(x => /^SEQ/.test(x)), loja: ix(x => x === 'LOJA'), placa: ix(x => /^PLACA/.test(x)), nome: ix(x => x === 'MOTORISTA' || x === 'NOME'), lacre: (k => k >= 0 ? k : (/LACR/.test(h[6] || '') ? 6 : ix(x => /LACR/.test(x))))(ix(x => /LACR/.test(x) && /BAU/.test(x))), cpf: ix(x => x === 'CPF'), rg: ix(x => /^(RG|R\.?\s?G\.?|IDENTIDADE|REGISTRO GERAL)(\s+(DO\s+)?MOTORISTA)?$/.test(x)) };
       if (c.loja < 0 || c.placa < 0 || c.nome < 0 || c.cpf < 0) continue;
       cargas = [];
       /* colunas de pré: PRÉ, PRÉ-ROMANEIO, PRE-05… (cada uma é uma "fonte"; valores separados por / = cortes) */
       preCols = []; const hr = sh.rows[r] || [];
       h.forEach((x, i) => { if (/^PRE(?!ENCH|VIS|C|S)/.test(x) && !/CORTE/.test(x)) { let nm = tsClean(hr[i]) || 'PRÉ'; while (preCols.some(p => p.name === nm)) nm += ' 2'; preCols.push({ name: nm, i }); } });
-      lacreHdr = c.lacre >= 0 ? tsClean(hr[c.lacre]) : '';
+      lacreHdr = c.lacre >= 0 ? (tsClean(hr[c.lacre]) || 'LACRE') + ' (col. ' + String.fromCharCode(65 + c.lacre % 26) + ')' : '';
       for (let i = r + 1; i < sh.rows.length; i++) {
         const w = sh.rows[i] || [];
         const loja = tsClean(w[c.loja]), placa = tsClean(w[c.placa]).toUpperCase(), nome = tsClean(w[c.nome]).toUpperCase(), d = digits(w[c.cpf]);
@@ -833,8 +833,8 @@ const tsLacre = l => { l = String(l || '').trim(); if (!l) return ''; return ['L
 const tsR = (c, n) => ({ cpf: c.cpf, placa: String(c.placa || '').toUpperCase(), conf: [c.loja, tsPre(c, n), ''], ajud: [tsLacre(c.lacre), '', ''] });
 /* RG: vem da coluna RG da planilha carregada; se a planilha não trouxer, usa o do cadastro */
 const tsDrv = c => { const d = Store.get('motoristas', c.cpf) || { cpf: c.cpf, nome: c.nome, rg: '', transp: '', placa: c.placa, _tmp: true }; return c.rg ? { ...d, rg: c.rg } : d; };
-/* texto copiado/espelho da TS: igual ao da aba Romaneio, sem loja e sem pré nos campos de Conferente (o pré é digitado em outro campo do sistema) */
-const tsRp = R => ({ ...R, conf: ['', '', ''] });
+/* texto copiado/espelho da TS: Conferente 1 vazio, Conferente 2 = sequência da carga, Conferente 3 = nome da loja (o pré é digitado em outro campo do sistema) */
+const tsRp = (R, c) => ({ ...R, conf: ['', c ? String(c.seq) : '', c ? String(c.loja || '') : ''] });
 
 function viewRomaneioTS(m) {
   const cg = TS.cargas, cur = TS.sel >= 0 ? cg[TS.sel] : null, CT = tsCortes();
@@ -877,8 +877,8 @@ function viewRomaneioTS(m) {
     const pend = c ? tsCortes().filter(k => tsPre(c, k) && !TS.feito[tsKey(c, k)]) : [];
     $('#tsInfo').innerHTML = c ? `<div class="kv"><b>Seq / Loja</b><span>${c.seq} · ${esc(c.loja)}</span><b>Motorista</b><span>${esc(c.nome)}</span><b>CPF</b><span class="mono">${tsCpf(c.cpf)} ${cpfOk(c.cpf) ? '' : '<span class="warn">· CPF inválido</span>'}</span><b>RG</b><span>${esc(drv.rg) || '—'}</span><b>Transportadora</b><span>${esc(drv.transp)} ${esc(transpName(drv.transp))} ${drv._tmp ? '<span class="warn">· motorista não cadastrado (cadastre na aba Cadastro)</span>' : (transpName(drv.transp) ? '' : '<span class="warn">· código sem transportadora</span>')}</span><b>Placa</b><span class="mono">${esc(c.placa) || '<span class="warn">sem placa</span>'}</span><b>Lacre</b><span class="mono">${esc(c.lacre) || '<span class="warn">sem lacre</span>'}</span>
       <b>Pré atual</b><span class="mono">${esc(pre) ? `${esc(pre)} <small>(${n}° corte)</small>` : '<span class="warn">sem pré</span>'}</span><b>Pré por corte</b><span class="mono">${tsCortes().map(k => `${k}°: ${esc(tsPre(c, k)) || '—'}${TS.feito[tsKey(c, k)] ? ' ✓' : ''}`).join(' &nbsp; ')}</span></div>${dn ? '<p class="sub" style="margin:10px 0 0;color:var(--ok);font-weight:700">✓ Finalizada — todos os prés desta carga foram romaneados</p>' : (pend.length > 1 ? `<p class="sub" style="margin:10px 0 0">Depois deste: ${pend.slice(1).map(k => k + '° corte (' + esc(tsPre(c, k)) + ')').join(', ')}</p>` : '')}` : '<p class="sub">Nenhuma carga selecionada.</p>';
-    $('#tsScr').textContent = screenText(tsRp(R2), drv).join('\n');
-    const lines = c ? buildPaste(tsRp(R2), drv) : [];
+    $('#tsScr').textContent = screenText(tsRp(R2, c), drv).join('\n');
+    const lines = c ? buildPaste(tsRp(R2, c), drv) : [];
     $('#tsPaste').innerHTML = lines.map((l, i) => `<div class="ln"><span class="n">${i + 1}</span><span class="t">${l ? esc(l).replace(/^( +)/, x => '<i>' + '·'.repeat(x.length) + '</i>') : '<i>(vazia)</i>'}</span><span class="l">${l.length}</span></div>`).join('');
     $('#tsCnt').textContent = `· ${lines.length} linhas · ${pasteText(lines).length} caracteres`;
     const mx = Math.max(...lines.map(l => l.length), 10);
@@ -905,7 +905,7 @@ function viewRomaneioTS(m) {
   $('#tsCopy').onclick = async () => {
     const c = TS.cargas[TS.sel]; if (!c) return;
     const n = tsCur(c); if (!tsPre(c, n)) return;
-    const d = tsDrv(c), R2 = tsR(c, n), k = tsKey(c, n), txt = pasteText(buildPaste(tsRp(R2), d));
+    const d = tsDrv(c), R2 = tsR(c, n), k = tsKey(c, n), txt = pasteText(buildPaste(tsRp(R2, c), d));
     try { await navigator.clipboard.writeText(txt); } catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
     TS.feito[k] = Date.now(); saveTS();
     try { await Store.add('historico', { cpf: d.cpf, nome: d.nome, transp: d.transp || '', transpNome: transpName(d.transp), placa: R2.placa, conf: R2.conf.filter(Boolean), ajud: R2.ajud.filter(Boolean), usuario: Store.user || 'anon', op: 'ts', loja: c.loja || '', pre: tsPre(c, n) || '', lacre: c.lacre || '' }); } catch (e) { console.warn(e); }
