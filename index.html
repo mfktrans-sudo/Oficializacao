@@ -189,6 +189,7 @@ main.gmode{display:flex;padding:24px 16px}
 .indtb td.n,.indtb th.n{text-align:right}
 .indtb tfoot td{font-weight:800;border-top:2px solid var(--border);background:var(--surface2)}
 .indtb tbody tr{cursor:default}
+.ro-view .newrow,.ro-view [data-del],.ro-view .addbar{display:none!important}
 </style>
 </head>
 <body>
@@ -436,7 +437,10 @@ const Store = {
   persistLocal(col) { LS.set('rom_local_' + col, [...this.data[col].values()]); },
 
   /* grava SOMENTE os campos alterados (merge) */
+  /* somente visualização: bloqueia qualquer gravação (exceto o próprio registro de acesso/presença) */
+  blocked(col, id) { if (access().ro && !(col === 'config' && id === 'acesso_' + myKey())) { toast('Seu usuário é somente visualização — não é possível editar.'); return true; } return false; },
   async set(col, id, patch) {
+    if (this.blocked(col, id)) return;
     const meta = { updatedBy: this.user || 'anon' };
     const prev = this.data[col].get(id) || { id };
     this.data[col].set(id, { ...prev, ...patch, ...meta, id, updatedAtLocal: Date.now() });
@@ -448,6 +452,7 @@ const Store = {
     finally { this.pending--; this.emit('conn'); }
   },
   async add(col, obj) {
+    if (this.blocked(col)) return '';
     const id = 'h' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
     if (this.mode === 'local') { this.data[col].set(id, { ...obj, id, ts: Date.now() }); this.persistLocal(col); this.emit(col); return id; }
     const { F, db } = this.fb; this.pending++; this.emit('conn');
@@ -455,12 +460,14 @@ const Store = {
     return id;
   },
   async del(col, id) {
+    if (this.blocked(col, id)) return;
     this.data[col].delete(id); this.emit(col);
     if (this.mode === 'local') { this.persistLocal(col); return; }
     const { F, db } = this.fb; this.pending++; this.emit('conn');
     try { await F.deleteDoc(F.doc(db, col, id)); } finally { this.pending--; this.emit('conn'); }
   },
   async bulk(col, items, idFn) {   // importação em lote (500 por commit)
+    if (this.blocked(col)) return;
     if (this.mode === 'local') { items.forEach(o => this.data[col].set(idFn(o), { ...o, id: idFn(o) })); this.persistLocal(col); this.emit(col); return; }
     const { F, db } = this.fb; this.pending++; this.emit('conn');
     try {
@@ -557,7 +564,7 @@ function access() {
   if (me && me.role === 'adm' && list.some(a => a.role === 'adm')) return { ready: true, adm: true, open: false, tabs: ALL_TABS };
   let t = me && Array.isArray(me.tabs) ? me.tabs.filter(k => ACC_TABS.some(x => x[0] === k)) : ACC_DEFAULT;
   if (!t.length) t = ['romaneio'];
-  return { ready: true, adm: false, open: false, tabs: t };
+  return { ready: true, adm: false, open: false, tabs: t, ro: !!(me && me.ro) };
 }
 const visibleTabs = () => { const a = access(); return TABS.filter(([k]) => a.tabs.includes(k)); };
 const canTab = k => access().tabs.includes(k);
@@ -1002,6 +1009,11 @@ function viewCadastro(m) {
   const drawE = () => { $('#bE').innerHTML = Store.list('pessoal').sort(byName).map(r => `<tr data-id="${esc(r.id)}"><td><input data-k="nome" value="${esc(r.nome)}"></td><td class="c"><select data-k="tipo"><option value="conferente" ${r.tipo === 'conferente' ? 'selected' : ''}>Conferente</option><option value="ajudante" ${r.tipo === 'ajudante' ? 'selected' : ''}>Ajudante</option></select></td><td class="c"><select data-k="ativo"><option value="1" ${r.ativo !== false ? 'selected' : ''}>Sim</option><option value="0" ${r.ativo === false ? 'selected' : ''}>Não</option></select></td><td class="c"><button class="btn sm danger" data-del>✕</button></td></tr>`).join('') || '<tr><td colspan="4" class="empty">Equipe vazia.</td></tr>'; };
   CAD = { drawM, drawT, drawE, drawDL };
   drawDL(); drawM(); drawT(); drawE();
+  if (access().ro) {   /* somente visualização: trava campos e esconde ações de edição */
+    const cad = $('#cad'); cad.classList.add('ro-view');
+    const lock = () => cad.querySelectorAll('input[data-k], select[data-k]').forEach(el => { if (el.tagName === 'SELECT') el.disabled = true; else el.readOnly = true; });
+    lock(); new MutationObserver(lock).observe(cad, { childList: true, subtree: true });
+  }
 
   /* ----- filtros ----- */
   $('#mq').oninput = e => { mq = e.target.value; mpage = 0; drawM(); };
@@ -1476,17 +1488,18 @@ function wireAcesso() {
     const list = acList().sort((a, b) => String(a.login || a.id).localeCompare(String(b.login || b.id)));
     const ac = access(), me = myKey();
     card.innerHTML = `<h3>Acesso de usuários</h3>
-      <p class="sub" style="font-size:12.5px">Usuários <b>Restritos</b> veem somente as abas marcadas (padrão: Romaneio e Cadastro). <b>Administradores</b> têm acesso a tudo, inclusive Configurações, e podem editar/excluir no Histórico. Quem entrar pela primeira vez aparece aqui como Restrito.</p>
+      <p class="sub" style="font-size:12.5px">Usuários <b>Restritos</b> veem somente as abas marcadas (padrão: Romaneio e Cadastro). <b>Administradores</b> têm acesso a tudo, inclusive Configurações, e podem editar/excluir no Histórico. Quem entrar pela primeira vez aparece aqui como Restrito. Marcando <b>Somente visualizar</b>, o usuário vê tudo o que estiver liberado, mas não consegue editar, adicionar, excluir nem importar nada.</p>
       ${ac.open ? '<div class="gwarn">Nenhum administrador definido: por enquanto <b>todos</b> os usuários têm acesso total. Marque pelo menos um como Administrador para ativar as restrições.</div>' : ''}
       <div class="addbar"><input class="in" id="acN" placeholder="Login do usuário (o que ele digita para entrar, ex.: maria)"><button class="btn pri sm" id="acAdd" type="button">+ Adicionar</button></div>
-      <div class="tw" style="max-height:440px"><table><thead><tr><th>Usuário</th><th>Perfil</th><th>Abas liberadas</th><th>Último acesso</th><th></th></tr></thead><tbody>${list.map(a => {
+      <div class="tw" style="max-height:440px"><table><thead><tr><th>Usuário</th><th>Perfil</th><th>Abas liberadas</th><th>Somente visualização</th><th>Último acesso</th><th></th></tr></thead><tbody>${list.map(a => {
         const k = String(a.id).slice(7), adm = a.role === 'adm', tabs = adm ? ACC_TABS.map(x => x[0]) : (Array.isArray(a.tabs) ? a.tabs : ACC_DEFAULT);
         return `<tr data-k="${esc(k)}" style="cursor:default"><td><b>${esc(a.login || k)}</b>${k === me ? ' <small class="warn">(você)</small>' : ''}<br><small style="color:var(--faint)">${esc(a.nome || '')}</small></td>
           <td><select class="in" data-role style="min-width:150px"><option value="restrito" ${adm ? '' : 'selected'}>Restrito</option><option value="adm" ${adm ? 'selected' : ''}>Administrador</option></select></td>
           <td>${ACC_TABS.map(([t, n]) => `<label class="gcheck" style="display:inline-flex;margin:0 14px 0 0"><input type="checkbox" data-tab="${t}" ${tabs.includes(t) ? 'checked' : ''} ${adm ? 'disabled' : ''}> ${n}</label>`).join('')}</td>
+          <td><label class="gcheck" style="display:inline-flex;margin:0" title="${adm ? 'Administradores nunca ficam limitados' : 'Usuário só visualiza, sem editar nada'}"><input type="checkbox" data-ro ${a.ro && !adm ? 'checked' : ''} ${adm ? 'disabled' : ''}> Somente visualizar</label></td>
           <td><small>${a.ultimoAcesso ? new Date(a.ultimoAcesso).toLocaleString('pt-BR') : '—'}</small></td>
           <td><button class="btn sm danger" data-rm type="button" title="Remover da lista">✕</button></td></tr>`;
-      }).join('') || '<tr><td colspan="5" class="empty">Nenhum usuário listado ainda.</td></tr>'}</tbody></table></div>`;
+      }).join('') || '<tr><td colspan="6" class="empty">Nenhum usuário listado ainda.</td></tr>'}</tbody></table></div>`;
     if (keep) $('#acN').value = keep;
   };
   const add = async () => {
@@ -1502,6 +1515,8 @@ function wireAcesso() {
       const role = e.target.value;
       if (role !== 'adm' && cur.role === 'adm' && nAdm() <= 1) { toast('Mantenha pelo menos um administrador.'); draw(); return; }
       await Store.set('config', id, { role, tabs: Array.isArray(cur.tabs) ? cur.tabs : ACC_DEFAULT });
+    } else if (e.target.matches('[data-ro]')) {
+      await Store.set('config', id, { ro: e.target.checked });
     } else if (e.target.matches('[data-tab]')) {
       await Store.set('config', id, { tabs: [...tr.querySelectorAll('[data-tab]')].filter(x => x.checked).map(x => x.dataset.tab) });
     }
