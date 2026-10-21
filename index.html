@@ -929,7 +929,8 @@ const tsLacre = l => { l = String(l || '').trim(); if (!l) return ''; return ['L
 const tsLacres = v => { const p = String(v || '').split(/[\/;,\s]+/).map(x => x.trim()).filter(Boolean).slice(0, 3); while (p.length < 3) p.push(''); return p; };
 const tsR = (c, n) => ({ cpf: c.cpf, placa: fmtPlaca(c.placa), conf: [c.loja, tsPre(c, n), ''], ajud: tsLacres(c.lacre) });
 /* RG: vem da coluna RG da planilha carregada; se a planilha não trouxer, usa o do cadastro */
-const tsDrv = c => { const d = Store.get('motoristas', c.cpf) || { cpf: c.cpf, nome: c.nome, rg: '', transp: '', placa: c.placa, _tmp: true }; return c.rg ? { ...d, rg: c.rg } : d; };
+/* TS NÃO usa o cadastro: só os dados da planilha carregada (transportadora vazia → o GAN pergunta "continuar mesmo assim?" e a linha S responde) */
+const tsDrv = c => ({ cpf: c.cpf, nome: c.nome, rg: c.rg || '', transp: '', placa: c.placa });
 /* texto copiado/espelho da TS: Conferente 1 vazio, Conferente 2 = sequência da carga, Conferente 3 = nome da loja (o pré é digitado em outro campo do sistema) */
 const tsLines = (R2, c, d) => {
   const lines = buildPaste(tsRp(R2, c), d), L = layout();
@@ -978,7 +979,7 @@ function viewRomaneioTS(m) {
     const c = TS.sel >= 0 ? TS.cargas[TS.sel] : null, n = tsCur(c), pre = c ? tsPre(c, n) : '', fe = c && TS.feito[tsKey(c, n)], dn = c && tsDone(c);
     const drv = c ? tsDrv(c) : null, R2 = c ? tsR(c, n) : { cpf: '', placa: '', conf: ['', '', ''], ajud: ['', '', ''] };
     const pend = c ? tsCortes().filter(k => tsPre(c, k) && !TS.feito[tsKey(c, k)]) : [];
-    $('#tsInfo').innerHTML = c ? `<div class="kv"><b>Seq / Loja</b><span>${c.seq} · ${esc(c.loja)}</span><b>Motorista</b><span>${esc(c.nome)}</span><b>CPF</b><span class="mono">${tsCpf(c.cpf)} ${cpfOk(c.cpf) ? '' : '<span class="warn">· CPF inválido</span>'}</span><b>RG</b><span>${esc(drv.rg) || '—'}</span><b>Transportadora</b><span>${esc(drv.transp)} ${esc(transpName(drv.transp))} ${drv._tmp ? '<span class="warn">· motorista não cadastrado (cadastre na aba Cadastro)</span>' : (transpName(drv.transp) ? '' : '<span class="warn">· código sem transportadora</span>')}</span><b>Placa</b><span class="mono">${esc(c.placa) || '<span class="warn">sem placa</span>'}</span><b>Lacre</b><span class="mono">${esc(c.lacre) || '<span class="warn">sem lacre</span>'}</span>
+    $('#tsInfo').innerHTML = c ? `<div class="kv"><b>Seq / Loja</b><span>${c.seq} · ${esc(c.loja)}</span><b>Motorista</b><span>${esc(c.nome)}</span><b>CPF</b><span class="mono">${tsCpf(c.cpf)} ${cpfOk(c.cpf) ? '' : '<span class="warn">· CPF inválido</span>'}</span><b>RG</b><span>${esc(drv.rg) || '—'}</span><b>Transportadora</b><span>${esc(drv.transp)} ${esc(transpName(drv.transp))} <small>(definida pelo GAN)</small></span><b>Placa</b><span class="mono">${esc(c.placa) || '<span class="warn">sem placa</span>'}</span><b>Lacre</b><span class="mono">${esc(c.lacre) || '<span class="warn">sem lacre</span>'}</span>
       <b>Pré atual</b><span class="mono">${esc(pre) ? `${esc(pre)} <small>(${n}° corte)</small>` : '<span class="warn">sem pré</span>'}</span><b>Pré por corte</b><span class="mono">${tsCortes().map(k => `${k}°: ${esc(tsPre(c, k)) || '—'}${TS.feito[tsKey(c, k)] ? ' ✓' : ''}`).join(' &nbsp; ')}</span></div>${dn ? '<p class="sub" style="margin:10px 0 0;color:var(--ok);font-weight:700">✓ Finalizada — todos os prés desta carga foram romaneados</p>' : (pend.length > 1 ? `<p class="sub" style="margin:10px 0 0">Depois deste: ${pend.slice(1).map(k => k + '° corte (' + esc(tsPre(c, k)) + ')').join(', ')}</p>` : '')}` : '<p class="sub">Nenhuma carga selecionada.</p>';
     $('#tsScr').textContent = screenText(tsRp(R2, c), drv).join('\n');
     const lines = c ? tsLines(R2, c, drv) : [];
