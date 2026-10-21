@@ -672,8 +672,11 @@ function viewRomaneio(m) {
           <input class="in" id="q" autocomplete="off" placeholder="Digite para buscar…" value="">
           <div class="sugg-list" id="sl" hidden></div></div>
         ${drv ? `<div class="kv" style="margin-top:14px">
-          <b>Nome</b><span>${esc(drv.nome)}</span><b>CPF</b><span class="mono">${fmtCpf(drv.cpf)} ${cpfOk(drv.cpf) ? '' : '<span class="warn">· CPF inválido</span>'}</span>
-          <b>RG</b><span>${esc(drv.rg) || '—'}</span><b>Transportadora</b><span>${esc(drv.transp)} ${esc(transpName(drv.transp))} ${transpName(drv.transp) ? '' : '<span class="warn">· código sem transportadora</span>'}</span></div>
+          <b>Nome</b><input class="in" data-dk="nome" autocomplete="off" style="padding:4px 8px;font-size:13px" value="${esc(drv.nome)}">
+          <b>CPF</b><span><input class="in mono" data-dk="cpf" maxlength="14" autocomplete="off" style="padding:4px 8px;font-size:13px" value="${fmtCpf(drv.cpf)}"> <span class="warn" id="drvCpfW">${cpfOk(drv.cpf) ? '' : '· CPF inválido'}</span></span>
+          <b>RG</b><input class="in" data-dk="rg" autocomplete="off" style="padding:4px 8px;font-size:13px" value="${esc(drv.rg)}">
+          <b>Transportadora</b><span><input class="in mono" data-dk="transp" list="dlTr" autocomplete="off" style="padding:4px 8px;font-size:13px" value="${esc(drv.transp)}"><span id="drvTn" style="display:block;margin-top:3px">${esc(transpName(drv.transp))} ${transpName(drv.transp) ? '' : '<span class="warn">· código sem transportadora</span>'}</span>
+          <datalist id="dlTr">${Store.list('transportadoras').sort(byName).map(t => `<option value="${esc(t.id)}">${esc(t.nome)}</option>`).join('')}</datalist></span></div>
           <div style="margin-top:12px"><button class="btn sm" id="edDrv">Editar cadastro</button></div>` : `<p class="sub" style="margin-top:14px">Nenhum motorista selecionado.</p>`}
       </div>
       <div class="card"><h3>2 · Veículo</h3>
@@ -722,6 +725,31 @@ function viewRomaneio(m) {
   m.querySelectorAll('[data-c]').forEach(s => s.oninput = () => { const p = s.selectionStart; s.value = upTxt(s.value); try { s.setSelectionRange(p, p); } catch {} R.conf[+s.dataset.c] = s.value; saveDraft(); refresh(); });
   m.querySelectorAll('[data-a]').forEach(s => s.oninput = () => { const p = s.selectionStart; s.value = upTxt(s.value); try { s.setSelectionRange(p, p); } catch {} R.ajud[+s.dataset.a] = s.value; saveDraft(); refresh(); });
   const ed = $('#edDrv'); if (ed) ed.onclick = () => { if (!canTab('cadastro')) return toast('Você não tem acesso à aba Cadastro'); mq = R.cpf; mf = ''; mpage = 0; tab = 'cadastro'; LS.set('rom_tab', tab); renderNav(); render(); };
+  /* editar dados do motorista direto nos campos do card (salva ao sair do campo / Enter) */
+  m.querySelectorAll('[data-dk]').forEach(el => {
+    if (access().ro) { el.readOnly = true; return; }
+    el.onkeydown = e => { if (e.key === 'Enter') el.blur(); };
+    el.onchange = async () => {
+      const k = el.dataset.dk, cur = Store.get('motoristas', R.cpf); if (!cur) return;
+      if (k === 'cpf') {
+        let c = digits(el.value);
+        if (c.length < 8 || c.length > 11) { toast('Informe um CPF válido (11 dígitos)'); el.value = fmtCpf(cur.cpf); return; }
+        c = c.padStart(11, '0');
+        if (c === cur.cpf) { el.value = fmtCpf(c); return; }
+        if (Store.get('motoristas', c)) { toast('Esse CPF já está cadastrado em outro motorista'); el.value = fmtCpf(cur.cpf); return; }
+        const { id, updatedBy, updatedAtLocal, updatedAt, ...rest } = cur;
+        await Store.set('motoristas', c, { ...rest, cpf: c });
+        await Store.del('motoristas', cur.cpf);
+        R.cpf = c; saveDraft(); toast('CPF atualizado ✓'); render(); return;
+      }
+      const v = k === 'nome' ? el.value.trim().toUpperCase() : k === 'transp' ? idOf(el.value) : el.value.trim();
+      if (k === 'nome' && !v) { toast('O nome não pode ficar vazio'); el.value = cur.nome; return; }
+      el.value = v;
+      await Store.set('motoristas', cur.cpf, { [k]: v });
+      if (k === 'transp') { const tn = transpName(v); $('#drvTn').innerHTML = `${esc(tn)} ${tn ? '' : (v ? '<span class="warn">· código sem transportadora</span>' : '')}`; }
+      refresh(); toast('Cadastro atualizado ✓');
+    };
+  });
   const up = $('#usePl'); if (up) up.onclick = e => { e.preventDefault(); R.placa = fmtPlaca(drv.placa); saveDraft(); render(); };
   $('#savePlaca').onclick = () => { if (drv && R.placa) { Store.set('motoristas', drv.cpf, { placa: R.placa }); toast('Placa gravada no cadastro'); } };
   $('#clear').onclick = () => { R = { cpf: '', placa: '', conf: ['', '', ''], ajud: ['', '', ''] }; saveDraft(); render(); };
