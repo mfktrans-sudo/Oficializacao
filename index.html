@@ -685,7 +685,7 @@ function viewRomaneio(m) {
         ${drv && drv.placa && fmtPlaca(drv.placa) !== R.placa ? `<div class="warn">Placa cadastrada: ${esc(fmtPlaca(drv.placa))} <a href="#" id="usePl" style="color:var(--info)">usar</a></div>` : ''}
       </div>
       <div class="card"><h3>3 · Equipe</h3>
-        <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">Conferente ${i + 1}${[' - Placa', ' - Pré', ' - Destino'][i]}</label><input class="in" data-c="${i}" list="dlConf" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" value="${esc(R.conf[i])}"></div>`).join('')}</div>
+        <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">Conferente ${i + 1}${[' - Destino', ' - Pré', ' - Placa'][i]}</label><input class="in" data-c="${i}" list="dlConf" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" value="${esc(R.conf[i])}"></div>`).join('')}</div>
         <div class="row r3">${[0, 1, 2].map(i => `<div><label class="f">${i === 0 ? 'Ajudante 1: LACR:' : i === 2 ? 'Ajudante 3 - Lac' : 'Ajudante ' + (i + 1)}</label><input class="in" data-a="${i}" list="dlAj" autocomplete="off" autocapitalize="characters" style="text-transform:uppercase" value="${esc(R.ajud[i])}"></div>`).join('')}</div>
         <datalist id="dlConf">${conf.map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
         <datalist id="dlAj">${(aj.length ? aj : conf).map(n => `<option value="${esc(n)}"></option>`).join('')}</datalist>
