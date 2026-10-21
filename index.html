@@ -931,12 +931,17 @@ const tsLacres = v => { const p = String(v || '').split(/[\/;,\s]+/).map(x => x.
 const tsR = (c, n) => ({ cpf: c.cpf, placa: fmtPlaca(c.placa), conf: [String(c.loja || '').toUpperCase(), tsPre(c, n), fmtPlaca(c.placa)], ajud: tsLacres(c.lacre).map(tsLacre) });
 /* RG: vem da coluna RG da planilha carregada; se a planilha não trouxer, usa o do cadastro */
 /* TS NÃO usa o cadastro: só os dados da planilha carregada (transportadora vazia → o GAN pergunta "continuar mesmo assim?" e a linha S responde) */
+const TS_ASK_KEY = 'rom_ts_ask';
+const tsAsk = cpf => { const m = LS.get(TS_ASK_KEY, {}); return m[cpf] !== false; };
+const tsSetAsk = (cpf, v) => { const m = LS.get(TS_ASK_KEY, {}); m[cpf] = !!v; LS.set(TS_ASK_KEY, m); };
 const tsDrv = c => ({ cpf: c.cpf, nome: c.nome, rg: c.rg || '', transp: '', placa: c.placa });
 /* texto copiado/espelho da TS: Conferente 1 vazio, Conferente 2 = sequência da carga, Conferente 3 = nome da loja (o pré é digitado em outro campo do sistema) */
 const tsLines = (R2, c, d) => {
   const lines = buildPaste(tsRp(R2, c), d), L = layout();
   const i = L.linhas.findIndex(t => /\{confirma[|}]/.test(t));
-  /* sempre envia a linha de confirmação (como na aba Romaneio): sem ela, motorista sem transportadora desloca todas as linhas seguintes 1 posição no GAN (placa/lacre não entram) */
+  /* o GAN só faz a pergunta "Deseja continuar mesmo assim?" para alguns motoristas. Quando NÃO pergunta, a linha de confirmação cai no campo Placa e desloca tudo 1 campo.
+     Por isso a linha só entra se este motorista (CPF) estiver marcado como "GAN pergunta" — escolha lembrada por CPF, só para a TS (não usa o cadastro). */
+  if (!tsAsk(c.cpf) && i >= 0 && lines[i] === L.confirma) lines.splice(i, 1);
   return lines;
 };
 const tsRp = (R, c) => R;
@@ -981,7 +986,8 @@ function viewRomaneioTS(m) {
     const drv = c ? tsDrv(c) : null, R2 = c ? tsR(c, n) : { cpf: '', placa: '', conf: ['', '', ''], ajud: ['', '', ''] };
     const pend = c ? tsCortes().filter(k => tsPre(c, k) && !TS.feito[tsKey(c, k)]) : [];
     $('#tsInfo').innerHTML = c ? `<div class="kv"><b>Seq / Loja</b><span>${c.seq} · ${esc(c.loja)}</span><b>Motorista</b><span>${esc(c.nome)}</span><b>CPF</b><span class="mono">${tsCpf(c.cpf)} ${cpfOk(c.cpf) ? '' : '<span class="warn">· CPF inválido</span>'}</span><b>RG</b><span>${esc(drv.rg) || '—'}</span><b>Transportadora</b><span>${esc(drv.transp)} ${esc(transpName(drv.transp))} <small>(definida pelo GAN)</small></span><b>Placa</b><span class="mono">${esc(c.placa) || '<span class="warn">sem placa</span>'}</span><b>Lacre</b><span class="mono">${esc(c.lacre) || '<span class="warn">sem lacre</span>'}</span>
-      <b>Pré atual</b><span class="mono">${esc(pre) ? `${esc(pre)} <small>(${n}° corte)</small>` : '<span class="warn">sem pré</span>'}</span><b>Pré por corte</b><span class="mono">${tsCortes().map(k => `${k}°: ${esc(tsPre(c, k)) || '—'}${TS.feito[tsKey(c, k)] ? ' ✓' : ''}`).join(' &nbsp; ')}</span></div>${dn ? '<p class="sub" style="margin:10px 0 0;color:var(--ok);font-weight:700">✓ Finalizada — todos os prés desta carga foram romaneados</p>' : (pend.length > 1 ? `<p class="sub" style="margin:10px 0 0">Depois deste: ${pend.slice(1).map(k => k + '° corte (' + esc(tsPre(c, k)) + ')').join(', ')}</p>` : '')}` : '<p class="sub">Nenhuma carga selecionada.</p>';
+      <b>Pré atual</b><span class="mono">${esc(pre) ? `${esc(pre)} <small>(${n}° corte)</small>` : '<span class="warn">sem pré</span>'}</span><b>Pré por corte</b><span class="mono">${tsCortes().map(k => `${k}°: ${esc(tsPre(c, k)) || '—'}${TS.feito[tsKey(c, k)] ? ' ✓' : ''}`).join(' &nbsp; ')}</span></div><label class="tsask" style="display:flex;gap:8px;align-items:flex-start;margin-top:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer"><input type="checkbox" id="tsAsk" ${tsAsk(c.cpf) ? 'checked' : ''} style="margin-top:3px"><span><b>O GAN pergunta "Deseja continuar mesmo assim?" para este motorista</b><br><small style="color:var(--dim)">Marcado = envia a linha de confirmação (S). Desmarque se, ao colar, a placa/lacre ficarem deslocados um campo (a linha "-> Deseja continuar…" aparecendo no campo Placa). Fica lembrado para este CPF.</small></span></label>${dn ? '<p class="sub" style="margin:10px 0 0;color:var(--ok);font-weight:700">✓ Finalizada — todos os prés desta carga foram romaneados</p>' : (pend.length > 1 ? `<p class="sub" style="margin:10px 0 0">Depois deste: ${pend.slice(1).map(k => k + '° corte (' + esc(tsPre(c, k)) + ')').join(', ')}</p>` : '')}` : '<p class="sub">Nenhuma carga selecionada.</p>';
+    const ak = $('#tsAsk'); if (ak) ak.onchange = () => { tsSetAsk(c.cpf, ak.checked); paint(); };
     $('#tsScr').textContent = screenText(tsRp(R2, c), drv).join('\n');
     const lines = c ? tsLines(R2, c, drv) : [];
     $('#tsPaste').innerHTML = lines.map((l, i) => `<div class="ln"><span class="n">${i + 1}</span><span class="t">${l ? esc(l).replace(/^( +)/, x => '<i>' + '·'.repeat(x.length) + '</i>') : '<i>(vazia)</i>'}</span><span class="l">${l.length}</span></div>`).join('');
