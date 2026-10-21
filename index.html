@@ -667,7 +667,7 @@ function viewRomaneio(m) {
     <div class="grid">
       <div class="card">
         <h3>1 · Motorista</h3>
-        ${atalhos.length ? `<div class="chips" style="margin-bottom:12px">${atalhos.map(a => `<button class="chipbtn ${R.cpf === a.cpf ? 'on' : ''}" data-at="${a.cpf}">${esc(a.atalho)}</button>`).join('')}</div>` : ''}
+        <div class="chips" style="margin-bottom:12px">${atalhos.map(a => `<button class="chipbtn ${R.cpf === a.cpf ? 'on' : ''}" data-at="${a.cpf}">${esc(a.atalho)}</button>`).join('')}${access().ro ? '' : `<button class="chipbtn" id="atNew" title="Adicionar novo botão" style="border-style:dashed">＋ Novo</button>${atalhos.length ? `<button class="chipbtn" id="atMan" title="Editar ou excluir botões" style="border-style:dashed">✎ Editar</button>` : ''}`}</div>
         <div class="sugg"><label class="f">Buscar por nome, CPF ou placa</label>
           <input class="in" id="q" autocomplete="off" placeholder="Digite para buscar…" value="">
           <div class="sugg-list" id="sl" hidden></div></div>
@@ -717,6 +717,58 @@ function viewRomaneio(m) {
   q.oninput = () => { res = searchDrivers(q.value); hl = -1; sl.hidden = !res.length; sl.innerHTML = res.map((x, i) => `<div data-i="${i}">${esc(x.nome)}<small>${fmtCpf(x.cpf)} · ${esc(x.transp)} ${esc(transpName(x.transp))}${x.placa ? ' · ' + esc(x.placa) : ''}</small></div>`).join(''); sl.querySelectorAll('div').forEach(d => d.onclick = () => pick(res[+d.dataset.i].cpf)); };
   q.onkeydown = e => { const it = [...sl.children]; if (e.key === 'ArrowDown') { hl = Math.min(hl + 1, it.length - 1); } else if (e.key === 'ArrowUp') { hl = Math.max(hl - 1, 0); } else if (e.key === 'Enter' && res.length) { pick(res[Math.max(hl, 0)].cpf); return; } else return; e.preventDefault(); it.forEach((x, i) => x.classList.toggle('hl', i === hl)); };
   m.querySelectorAll('[data-at]').forEach(b => b.onclick = () => pick(b.dataset.at));
+  /* gerenciar botões de atalho (novo / editar / excluir) */
+  const openAtalhos = (startNew) => {
+    const bg = document.createElement('div');
+    bg.style.cssText = 'position:fixed;inset:0;background:#0009;z-index:60;display:flex;align-items:center;justify-content:center;padding:16px';
+    bg.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:min(560px,100%);max-height:90vh;overflow:auto;padding:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><h3 style="margin:0">Botões de atalho</h3><button class="btn sm" id="atX">Fechar</button></div>
+      <div id="atList"></div>
+      <div style="border-top:1px solid var(--border);margin-top:14px;padding-top:14px">
+        <label class="f">Novo botão · buscar motorista (nome, CPF ou placa)</label>
+        <div class="sugg"><input class="in" id="atQ" autocomplete="off" placeholder="Digite para buscar…"><div class="sugg-list" id="atSl" hidden></div></div>
+        <div id="atSel" class="sub" style="margin:8px 0">Nenhum motorista selecionado.</div>
+        <div style="display:flex;gap:8px"><input class="in" id="atNm" autocomplete="off" placeholder="Nome do botão (ex.: AZUL)" style="text-transform:uppercase"><button class="btn pri" id="atAdd">Adicionar</button></div>
+      </div></div>`;
+    document.body.appendChild(bg);
+    const close = () => { bg.remove(); render(); };
+    bg.querySelector('#atX').onclick = close;
+    bg.onmousedown = e => { if (e.target === bg) close(); };
+    const drawList = () => {
+      const ls = Store.list('motoristas').filter(x => x.atalho).sort((a, b) => a.atalho.localeCompare(b.atalho));
+      const box = bg.querySelector('#atList');
+      box.innerHTML = ls.length ? ls.map(a => `<div style="display:grid;grid-template-columns:150px 1fr auto;gap:8px;align-items:center;margin-bottom:8px">
+        <input class="in" data-ren="${a.cpf}" value="${esc(a.atalho)}" style="text-transform:uppercase;padding:6px 9px">
+        <span class="sub" style="margin:0;font-size:12px">${esc(a.nome)} · ${esc(a.transp)}</span>
+        <button class="btn sm danger" data-rm="${a.cpf}">Excluir</button></div>`).join('') : '<p class="sub">Nenhum botão cadastrado.</p>';
+      box.querySelectorAll('[data-ren]').forEach(inp => {
+        inp.onkeydown = e => { if (e.key === 'Enter') inp.blur(); };
+        inp.onchange = async () => { const v = inp.value.trim().toUpperCase(); if (!v) { toast('O nome do botão não pode ficar vazio'); drawList(); return; } await Store.set('motoristas', inp.dataset.ren, { atalho: v }); toast('Botão atualizado ✓'); drawList(); };
+      });
+      box.querySelectorAll('[data-rm]').forEach(b => b.onclick = async () => {
+        const d = Store.get('motoristas', b.dataset.rm);
+        if (!confirm(`Excluir o botão "${d?.atalho || ''}"? O cadastro do motorista não será apagado.`)) return;
+        await Store.set('motoristas', b.dataset.rm, { atalho: '' }); toast('Botão excluído ✓'); drawList();
+      });
+    };
+    drawList();
+    let selCpf = '', rs = [];
+    const q2 = bg.querySelector('#atQ'), sl2 = bg.querySelector('#atSl');
+    q2.oninput = () => { rs = searchDrivers(q2.value); sl2.hidden = !rs.length; sl2.innerHTML = rs.map((x, i) => `<div data-i="${i}">${esc(x.nome)}<small>${fmtCpf(x.cpf)} · ${esc(x.transp)} ${esc(transpName(x.transp))}${x.atalho ? ' · botão: ' + esc(x.atalho) : ''}</small></div>`).join('');
+      sl2.querySelectorAll('div').forEach(d => d.onclick = () => { const x = rs[+d.dataset.i]; selCpf = x.cpf; sl2.hidden = true; q2.value = ''; bg.querySelector('#atSel').innerHTML = `Selecionado: <b>${esc(x.nome)}</b> · ${fmtCpf(x.cpf)}`; bg.querySelector('#atNm').focus(); }); };
+    bg.querySelector('#atAdd').onclick = async () => {
+      const nm = bg.querySelector('#atNm').value.trim().toUpperCase();
+      if (!selCpf) return toast('Selecione o motorista deste botão');
+      if (!nm) return toast('Informe o nome do botão');
+      const cur = Store.get('motoristas', selCpf);
+      if (cur && cur.atalho && cur.atalho !== nm && !confirm(`Este motorista já tem o botão "${cur.atalho}". Substituir por "${nm}"?`)) return;
+      await Store.set('motoristas', selCpf, { atalho: nm }); toast('Botão adicionado ✓');
+      selCpf = ''; bg.querySelector('#atNm').value = ''; bg.querySelector('#atSel').textContent = 'Nenhum motorista selecionado.'; drawList();
+    };
+    if (startNew) q2.focus();
+  };
+  const atN = $('#atNew'); if (atN) atN.onclick = () => openAtalhos(true);
+  const atM = $('#atMan'); if (atM) atM.onclick = () => openAtalhos(false);
   const setVal = (el, v) => { /* troca o texto mantendo o cursor no mesmo ponto */
     const pos = el.selectionStart ?? el.value.length, n = el.value.slice(0, pos).replace(/[^A-Za-z0-9]/g, '').length; el.value = v;
     let k = 0, p = 0; while (p < v.length && k < n) { if (/[A-Z0-9]/.test(v[p])) k++; p++; } try { el.setSelectionRange(p, p); } catch {} };
