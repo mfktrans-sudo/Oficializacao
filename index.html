@@ -934,7 +934,7 @@ const tsDrv = c => { const d = Store.get('motoristas', c.cpf) || { cpf: c.cpf, n
 const tsLines = (R2, c, d) => {
   const lines = buildPaste(tsRp(R2, c), d), L = layout();
   const i = L.linhas.findIndex(t => /\{confirma[|}]/.test(t));
-  if (!(d && d.transp) && i >= 0 && lines[i] === L.confirma) lines.splice(i, 1);
+  /* sempre envia a linha de confirmação (como na aba Romaneio): sem ela, motorista sem transportadora desloca todas as linhas seguintes 1 posição no GAN (placa/lacre não entram) */
   return lines;
 };
 const tsRp = (R, c) => ({ ...R, conf: ['', c ? String(c.seq) : '', c ? String(c.loja || '') : ''] });
