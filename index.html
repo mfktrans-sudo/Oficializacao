@@ -927,7 +927,8 @@ const tsCur = c => { if (!c) return 1; if (TS.corte > 0) return TS.corte; const 
 const tsLacre = l => { l = String(l || '').trim(); if (!l) return ''; return ['LACR: ' + l, 'LACR:' + l].find(x => x.length <= 11) || l; };
 /* célula com mais de um lacre ("512434/512433"): um lacre por campo de Ajudante (1, 2, 3) — assim cada um cabe nas 11 posições e o espelho = texto copiado */
 const tsLacres = v => { const p = String(v || '').split(/[\/;,\s]+/).map(x => x.trim()).filter(Boolean).slice(0, 3); while (p.length < 3) p.push(''); return p; };
-const tsR = (c, n) => ({ cpf: c.cpf, placa: fmtPlaca(c.placa), conf: [c.loja, tsPre(c, n), ''], ajud: tsLacres(c.lacre) });
+/* MESMO padrão da aba Romaneio: Conferente 1 = destino (loja), Conferente 2 = pré, Conferente 3 = placa; Ajudante 1/2/3 = "LACR: nnnnn" */
+const tsR = (c, n) => ({ cpf: c.cpf, placa: fmtPlaca(c.placa), conf: [String(c.loja || '').toUpperCase(), tsPre(c, n), fmtPlaca(c.placa)], ajud: tsLacres(c.lacre).map(tsLacre) });
 /* RG: vem da coluna RG da planilha carregada; se a planilha não trouxer, usa o do cadastro */
 /* TS NÃO usa o cadastro: só os dados da planilha carregada (transportadora vazia → o GAN pergunta "continuar mesmo assim?" e a linha S responde) */
 const tsDrv = c => ({ cpf: c.cpf, nome: c.nome, rg: c.rg || '', transp: '', placa: c.placa });
@@ -938,7 +939,7 @@ const tsLines = (R2, c, d) => {
   /* sempre envia a linha de confirmação (como na aba Romaneio): sem ela, motorista sem transportadora desloca todas as linhas seguintes 1 posição no GAN (placa/lacre não entram) */
   return lines;
 };
-const tsRp = (R, c) => ({ ...R, conf: ['', c ? String(c.seq) : '', c ? String(c.loja || '') : ''] });
+const tsRp = (R, c) => R;
 
 function viewRomaneioTS(m) {
   const cg = TS.cargas, cur = TS.sel >= 0 ? cg[TS.sel] : null, CT = tsCortes();
