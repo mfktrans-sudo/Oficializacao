@@ -1201,7 +1201,7 @@ function viewHist(m) {
   <div class="tw" id="histTw"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Motorista</th><th>Transportadora</th><th>Placa</th><th>Destino</th><th>Pré</th><th>Placa 2</th><th>Lacre</th><th>Equipe</th>${adm ? '<th></th>' : ''}</tr></thead><tbody id="hB"></tbody></table></div>`;
   /* a tabela ocupa toda a altura disponível até o rodapé (sem sobra vazia nem corte) */
   const fitHist = () => { const t = document.getElementById('histTw'); if (!t) return window.removeEventListener('resize', fitHist); t.style.maxHeight = Math.max(200, Math.floor(m.getBoundingClientRect().bottom - t.getBoundingClientRect().top - 18)) + 'px'; };
-  const LIM = 1000;
+  const LIM = HIST_LIMIT;
   const body = () => {
     if (!document.getElementById('hB')) return;
     const all = Store.list('historico').sort((a, b) => tms(b.ts) - tms(a.ts));
@@ -1241,11 +1241,11 @@ function viewHist(m) {
         if (HF.dest && !spl.get(r.id).destino.some(x => (dc.get(destKey(x)) || '').includes(destKey(HF.dest)))) return false;
         return true;
       });
-    } else rows = all.slice(0, 150);
+    } else rows = all;
     const n = rows.length; if (hfActive()) rows = rows.slice(0, LIM);
     $('#hSub').textContent = hfActive()
       ? `${nf(n)} registro${n === 1 ? '' : 's'} encontrado${n === 1 ? '' : 's'} de ${nf(all.length)} carregados${n > LIM ? ` · mostrando os ${nf(LIM)} mais recentes` : ''}${Store.mode === 'firebase' && all.length >= HIST_LIMIT ? ` · o histórico carregado está limitado a ${nf(HIST_LIMIT)} registros` : ''}.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}`
-      : `Últimos 150 registros de todos os usuários.${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}`;
+      : `${nf(all.length)} registro${all.length === 1 ? '' : 's'} de todos os usuários (todo o histórico carregado).${adm ? ' Use ✎ para corrigir ou ✕ para excluir um registro.' : ''}`;
     $('#hB').innerHTML = rows.map(r => `<tr data-id="${esc(r.id)}" style="cursor:default"><td>${new Date(tms(r.ts)).toLocaleString('pt-BR')}${r.updatedBy ? `<br><small class="warn" title="Editado por ${esc(r.updatedBy)}">✎ editado</small>` : ''}</td><td>${esc(r.usuario)}</td><td>${esc(r.nome)}<br><small class="mono">${fmtCpf(r.cpf)}</small></td><td>${esc(r.transpNome || r.transp)}</td><td class="mono">${esc(r.placa)}</td>${(q => `<td>${esc(q.destino.join(', '))}</td><td class="mono">${esc(q.pre.join(', '))}</td><td class="mono">${esc(q.placa2.join(', '))}</td><td class="mono">${esc(q.lacre.join(', '))}</td><td>${esc(q.equipe.join(', '))}</td>`)(spl.get(r.id))}${adm ? '<td style="white-space:nowrap"><button class="btn sm" data-ed title="Editar">✎</button> <button class="btn sm danger" data-rm title="Excluir">✕</button></td>' : ''}</tr>`).join('') || `<tr><td colspan="${adm ? 11 : 10}" class="empty">${hfActive() ? 'Nenhum registro encontrado com esses filtros.' : 'Sem registros.'}</td></tr>`;
     if (adm) m.querySelectorAll('#hB tr[data-id]').forEach(tr => {
       const id = tr.dataset.id;
